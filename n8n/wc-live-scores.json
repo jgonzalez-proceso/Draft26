@@ -1,0 +1,130 @@
+{
+  "name": "WC 2026 — Live Scores → Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 1 }] }
+      },
+      "name": "Cron cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://site.api.espn.com/apis/site/v2/sports/soccer/FIFA.WORLD/scoreboard",
+        "options": {}
+      },
+      "name": "ESPN Scoreboard",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtrar sólo partidos en juego o terminados recientemente\nconst events = $input.first().json.events ?? [];\nconst now = Date.now();\nreturn events\n  .filter(e => {\n    const state = e.status?.type?.state;\n    if (state === 'in') return true;\n    if (state === 'post') {\n      // últimas 2h\n      const d = new Date(e.date).getTime();\n      return now - d < 2 * 60 * 60 * 1000;\n    }\n    return false;\n  })\n  .map(e => ({\n    json: {\n      espn_id: e.competitions?.[0]?.id ?? e.id,\n      event_id: e.id,\n      match_date: e.date,\n      round: e.name,\n      home: e.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home'),\n      away: e.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away'),\n      status_short: e.status?.type?.state,\n      status_desc: e.status?.type?.description,\n      elapsed: parseInt((e.status?.type?.description ?? '0').match(/(\\d+)/)?.[1] ?? '0', 10)\n    }\n  }));"
+      },
+      "name": "Filtrar activos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [{ "leftValue": "={{ $input.all().length }}", "rightValue": 0, "operator": { "type": "number", "operation": "gt" } }]
+        }
+      },
+      "name": "¿Hay partidos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": { "value": "public" },
+        "table": { "value": "wc_fixtures" },
+        "conflictTarget": "espn_id",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "values": {
+            "assignments": [
+              { "id": "espn_id",    "name": "espn_id",      "value": "={{ $json.espn_id }}", "type": "string" },
+              { "id": "match_date", "name": "match_date",   "value": "={{ $json.match_date }}", "type": "string" },
+              { "id": "round",      "name": "round",        "value": "={{ $json.round }}", "type": "string" },
+              { "id": "home_name",  "name": "home_name",    "value": "={{ $json.home?.team?.displayName }}", "type": "string" },
+              { "id": "home_logo",  "name": "home_logo",    "value": "={{ $json.home?.team?.logo }}", "type": "string" },
+              { "id": "home_score", "name": "home_score",   "value": "={{ parseInt($json.home?.score ?? '0', 10) }}", "type": "number" },
+              { "id": "away_name",  "name": "away_name",    "value": "={{ $json.away?.team?.displayName }}", "type": "string" },
+              { "id": "away_logo",  "name": "away_logo",    "value": "={{ $json.away?.team?.logo }}", "type": "string" },
+              { "id": "away_score", "name": "away_score",   "value": "={{ parseInt($json.away?.score ?? '0', 10) }}", "type": "number" },
+              { "id": "status_short","name": "status_short","value": "={{ $json.status_short }}", "type": "string" },
+              { "id": "elapsed",    "name": "elapsed",      "value": "={{ $json.elapsed }}", "type": "number" },
+              { "id": "updated_at", "name": "updated_at",   "value": "={{ new Date().toISOString() }}", "type": "string" }
+            ]
+          }
+        }
+      },
+      "name": "Upsert wc_fixtures",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1120, 200],
+      "credentials": { "supabaseApi": { "name": "Supabase Draft Mundial" } }
+    },
+    {
+      "parameters": {
+        "url": "=https://site.api.espn.com/apis/site/v2/sports/soccer/FIFA.WORLD/summary?event={{ $json.event_id }}",
+        "options": {}
+      },
+      "name": "ESPN Summary (goles)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 360]
+    },
+    {
+      "parameters": {
+        "jsCode": "const espnId = $('Filtrar activos').item.json.espn_id;\nconst plays = $input.first().json.plays ?? [];\nreturn plays\n  .filter(p => p.scoringPlay)\n  .map(p => ({\n    json: {\n      espn_fixture_id: espnId,\n      elapsed: parseInt((p.clock?.displayValue ?? '0').split(':')[0], 10) || null,\n      team_abbr: p.team?.abbreviation ?? '',\n      player_name: p.participants?.[0]?.athlete?.displayName ?? '—',\n      event_type: /penalty/i.test(p.text ?? '') ? 'penalty' : /own/i.test(p.text ?? '') ? 'ownGoal' : 'goal'\n    }\n  }));"
+      },
+      "name": "Parsear goles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 360]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": { "value": "public" },
+        "table": { "value": "wc_events" },
+        "conflictTarget": "espn_fixture_id,player_name,elapsed",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "values": {
+            "assignments": [
+              { "id": "espn_fixture_id", "name": "espn_fixture_id", "value": "={{ $json.espn_fixture_id }}", "type": "string" },
+              { "id": "elapsed",         "name": "elapsed",         "value": "={{ $json.elapsed }}", "type": "number" },
+              { "id": "team_abbr",       "name": "team_abbr",       "value": "={{ $json.team_abbr }}", "type": "string" },
+              { "id": "player_name",     "name": "player_name",     "value": "={{ $json.player_name }}", "type": "string" },
+              { "id": "event_type",      "name": "event_type",      "value": "={{ $json.event_type }}", "type": "string" }
+            ]
+          }
+        }
+      },
+      "name": "Upsert wc_events",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1560, 360],
+      "credentials": { "supabaseApi": { "name": "Supabase Draft Mundial" } }
+    }
+  ],
+  "connections": {
+    "Cron cada minuto":       { "main": [[{ "node": "ESPN Scoreboard", "type": "main", "index": 0 }]] },
+    "ESPN Scoreboard":        { "main": [[{ "node": "Filtrar activos", "type": "main", "index": 0 }]] },
+    "Filtrar activos":        { "main": [[{ "node": "¿Hay partidos?", "type": "main", "index": 0 }]] },
+    "¿Hay partidos?":         { "main": [[{ "node": "Upsert wc_fixtures", "type": "main", "index": 0 }, { "node": "ESPN Summary (goles)", "type": "main", "index": 0 }], []] },
+    "ESPN Summary (goles)":   { "main": [[{ "node": "Parsear goles", "type": "main", "index": 0 }]] },
+    "Parsear goles":          { "main": [[{ "node": "Upsert wc_events", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

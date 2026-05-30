@@ -1,0 +1,60 @@
+-- =====================================================================
+-- Draft Mundial 26 — Stubs de futuro (NO usados por el MVP)
+-- =====================================================================
+-- Estructura reservada para fases posteriores (puntuación, alineaciones,
+-- clasificación, estadísticas). Se dejan COMENTADAS para no contaminar el
+-- MVP ni añadir RLS/índices que aún no se necesitan. Descomentar cuando se
+-- aborde cada funcionalidad.
+--
+-- Funcionalidades previstas (ver plan): sistema de puntuación por rendimiento,
+-- estadísticas de jugadores, alineaciones, capitán, clasificación de usuarios,
+-- mercado de fichajes, cambios entre jornadas, lesiones/bajas, notificaciones,
+-- chat de liga, integración con API de fútbol, importación oficial de plantillas,
+-- modo público de la liga.
+-- =====================================================================
+
+-- -- Estadísticas reales por jugador y jornada
+-- create table public.player_stats (
+--   id uuid primary key default gen_random_uuid(),
+--   player_id uuid not null references public.players(id) on delete cascade,
+--   matchday int not null,
+--   goals int not null default 0,
+--   assists int not null default 0,
+--   minutes int not null default 0,
+--   clean_sheet boolean not null default false,
+--   yellow_cards int not null default 0,
+--   red_cards int not null default 0,
+--   created_at timestamptz not null default now(),
+--   unique (player_id, matchday)
+-- );
+
+-- -- Reglas de puntuación configurables por liga
+-- create table public.scoring_rules (
+--   id uuid primary key default gen_random_uuid(),
+--   league_id uuid not null references public.leagues(id) on delete cascade,
+--   rule_key text not null,      -- p.ej. 'goal_fwd', 'assist', 'clean_sheet_gk'
+--   points numeric not null,
+--   unique (league_id, rule_key)
+-- );
+
+-- -- Alineaciones por jornada (titular/suplente, capitán)
+-- create table public.lineups (
+--   id uuid primary key default gen_random_uuid(),
+--   league_id uuid not null references public.leagues(id) on delete cascade,
+--   user_id uuid not null references public.profiles(id),
+--   matchday int not null,
+--   player_id uuid not null references public.players(id),
+--   is_starter boolean not null default true,
+--   is_captain boolean not null default false,
+--   unique (league_id, user_id, matchday, player_id)
+-- );
+
+-- -- Clasificación acumulada de usuarios por liga
+-- create table public.standings (
+--   id uuid primary key default gen_random_uuid(),
+--   league_id uuid not null references public.leagues(id) on delete cascade,
+--   user_id uuid not null references public.profiles(id),
+--   total_points numeric not null default 0,
+--   updated_at timestamptz not null default now(),
+--   unique (league_id, user_id)
+-- );

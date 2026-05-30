@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tema oscuro deportivo por defecto (cómodo para el draft en vivo) */
+:root {
+  --background: #0b1220;
+  --foreground: #e6edf3;
+  --surface: #111a2b;
+  --surface-2: #16223a;
+  --line: #233149;
+  --muted: #93a4bd;
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(18, 183, 106, 0.12), transparent 60%),
+    var(--background);
+  min-height: 100vh;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+  }
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply btn bg-pitch-500 text-white hover:bg-pitch-600;
+  }
+  .btn-gold {
+    @apply btn bg-gold-500 text-slate-900 hover:bg-gold-400;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-surface-2 text-foreground hover:bg-surface;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-pitch-500 focus:ring-2 focus:ring-pitch-500/30;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+}
+
+/* Respeta la preferencia de movimiento reducido del sistema */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

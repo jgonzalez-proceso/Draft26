@@ -38,6 +38,7 @@ export default async function EquiposPage({
       members={members}
       players={players}
       initialUserId={ctx.userId}
+      isAdmin={ctx.isAdmin}
       initial={{
         draft: ctx.draft,
         picks: (picks ?? []) as DraftPick[],

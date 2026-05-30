@@ -28,6 +28,8 @@ export default function TeamView({
   const [userId, setUserId] = useState(initialUserId);
   const [formation, setFormation] = useState(DEFAULT_FORMATION);
 
+  const isOwnTeam = userId === initialUserId;
+
   const playerById = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
 
   const squad = useMemo(() => {
@@ -66,20 +68,28 @@ export default function TeamView({
       <div className="space-y-4">
         <div className="card p-4">
           <h3 className="font-bold">Táctica</h3>
-          <p className="mt-1 text-xs text-muted">Cambia la formación del equipo.</p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            {Object.keys(FORMATIONS).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFormation(f)}
-                className={`btn px-2 py-1.5 text-sm ${
-                  f === formation ? "bg-gold-500 text-slate-900" : "border border-line bg-surface-2"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+          {isOwnTeam ? (
+            <>
+              <p className="mt-1 text-xs text-muted">Cambia la formación de tu equipo.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {Object.keys(FORMATIONS).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFormation(f)}
+                    className={`btn px-2 py-1.5 text-sm ${
+                      f === formation ? "bg-gold-500 text-slate-900" : "border border-line bg-surface-2"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-muted">
+              Solo puedes configurar tu propio equipo.
+            </p>
+          )}
         </div>
 
         <div className="card p-4">

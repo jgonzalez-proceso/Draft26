@@ -42,7 +42,7 @@ export default function ResultadosShell({
 
   return (
     <div
-      className="mx-auto overflow-hidden rounded-xl border-2 border-blue-950 bg-gradient-to-b from-[#0a1730] to-[#070f22] shadow-[0_12px_50px_rgba(0,0,0,0.55)]"
+      className="mx-auto flex flex-col overflow-hidden rounded-xl border-2 border-blue-950 bg-gradient-to-b from-[#0a1730] to-[#070f22] shadow-[0_12px_50px_rgba(0,0,0,0.55)]"
       style={{
         containerType: "inline-size",
         // Full-bleed centrado: sale del max-w-6xl del dashboard y usa casi todo el ancho
@@ -50,10 +50,12 @@ export default function ResultadosShell({
         left: "50%",
         transform: "translateX(-50%)",
         width: "min(1680px, calc(100vw - 2rem))",
+        // Encajar a la altura de pantalla: el scroll queda DENTRO del panel, no en la página
+        height: "calc(100svh - 7rem)",
       }}
     >
       {/* ── Barra superior ── */}
-      <header className="flex items-center justify-between gap-3 border-b-2 border-blue-950 bg-gradient-to-b from-blue-800 to-blue-950 px-3 py-2 sm:px-4">
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-blue-950 bg-gradient-to-b from-blue-800 to-blue-950 px-3 py-2 sm:px-4">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-gradient-to-b from-amber-300 to-amber-600 text-blue-950 ring-1 ring-amber-200/50">
             <Trophy className="h-5 w-5" />
@@ -90,9 +92,9 @@ export default function ResultadosShell({
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_13rem]">
-        {/* ── Contenido principal ── */}
-        <main className="order-2 min-w-0 p-3 sm:p-4 md:order-1">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_13rem]">
+        {/* ── Contenido principal (scroll interno) ── */}
+        <main className="order-2 min-w-0 overflow-y-auto p-3 sm:p-4 md:order-1">
           {view === "grupos" && <GroupsView groups={groups} />}
           {view === "eliminatorias" && <BracketView fixtures={allFixtures} />}
           {view === "goleadores" && <ScorersView scorers={scorers} />}
@@ -132,7 +134,7 @@ export default function ResultadosShell({
       </div>
 
       {/* ── Barra inferior ── */}
-      <footer className="flex items-center justify-between gap-3 border-t-2 border-blue-950 bg-gradient-to-b from-blue-950 to-[#060d1c] px-3 py-1.5 text-[11px] text-blue-300/70 sm:px-4">
+      <footer className="flex shrink-0 items-center justify-between gap-3 border-t-2 border-blue-950 bg-gradient-to-b from-blue-950 to-[#060d1c] px-3 py-1.5 text-[11px] text-blue-300/70 sm:px-4">
         <span className="font-semibold uppercase tracking-wider">
           Copa del Mundo · Canadá / México / USA 2026
         </span>

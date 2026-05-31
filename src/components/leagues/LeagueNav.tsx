@@ -23,7 +23,7 @@ export default function LeagueNav({
   const tabs = [
     { href: base, label: "Menú" },
     { href: `${base}/draft`, label: "Draft" },
-    { href: `${base}/jugadores`, label: "Jugadores" },
+    { href: `${base}/jugadores`, label: "Selecciones" },
     { href: `${base}/equipos`, label: "Equipos" },
     { href: `${base}/historial`, label: "Historial" },
     ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin" }] : []),

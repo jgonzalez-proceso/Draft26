@@ -42,8 +42,15 @@ export default function ResultadosShell({
 
   return (
     <div
-      className="mx-auto max-w-7xl overflow-hidden rounded-xl border-2 border-blue-950 bg-gradient-to-b from-[#0a1730] to-[#070f22] shadow-[0_12px_50px_rgba(0,0,0,0.55)]"
-      style={{ containerType: "inline-size" }}
+      className="mx-auto overflow-hidden rounded-xl border-2 border-blue-950 bg-gradient-to-b from-[#0a1730] to-[#070f22] shadow-[0_12px_50px_rgba(0,0,0,0.55)]"
+      style={{
+        containerType: "inline-size",
+        // Full-bleed centrado: sale del max-w-6xl del dashboard y usa casi todo el ancho
+        position: "relative",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "min(1680px, calc(100vw - 2rem))",
+      }}
     >
       {/* ── Barra superior ── */}
       <header className="flex items-center justify-between gap-3 border-b-2 border-blue-950 bg-gradient-to-b from-blue-800 to-blue-950 px-3 py-2 sm:px-4">

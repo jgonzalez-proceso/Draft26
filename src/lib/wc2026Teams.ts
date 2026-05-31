@@ -4,12 +4,14 @@
  *
  * `nameEs` coincide exactamente con los nombres de `national_teams` (seed.sql)
  * para los 32 equipos que ya tienen plantilla, de modo que se fusionan por
- * nombre. Los 16 restantes aún no tienen plantilla → "pendiente de cargar".
+ * nombre. `nameEn` se usa para emparejar con la API pública de ESPN.
+ * Los 16 restantes aún no tienen plantilla → "pendiente de cargar".
  */
 
 export interface Wc2026Team {
   id: string;       // ISO-2 (o gb-eng / gb-sct)
   nameEs: string;
+  nameEn: string;
   group: string;    // "A" … "L"
   flagUrl: string;
 }
@@ -18,65 +20,65 @@ const flag = (iso: string) => `https://flagcdn.com/w320/${iso}.png`;
 
 export const WC2026_TEAMS: Wc2026Team[] = [
   // Grupo A
-  { id: "mx", nameEs: "México", group: "A", flagUrl: flag("mx") },
-  { id: "za", nameEs: "Sudáfrica", group: "A", flagUrl: flag("za") },
-  { id: "kr", nameEs: "Corea del Sur", group: "A", flagUrl: flag("kr") },
-  { id: "cz", nameEs: "Chequia", group: "A", flagUrl: flag("cz") },
+  { id: "mx", nameEs: "México", nameEn: "Mexico", group: "A", flagUrl: flag("mx") },
+  { id: "za", nameEs: "Sudáfrica", nameEn: "South Africa", group: "A", flagUrl: flag("za") },
+  { id: "kr", nameEs: "Corea del Sur", nameEn: "South Korea", group: "A", flagUrl: flag("kr") },
+  { id: "cz", nameEs: "Chequia", nameEn: "Czechia", group: "A", flagUrl: flag("cz") },
   // Grupo B
-  { id: "ca", nameEs: "Canadá", group: "B", flagUrl: flag("ca") },
-  { id: "ba", nameEs: "Bosnia y Herzegovina", group: "B", flagUrl: flag("ba") },
-  { id: "qa", nameEs: "Catar", group: "B", flagUrl: flag("qa") },
-  { id: "ch", nameEs: "Suiza", group: "B", flagUrl: flag("ch") },
+  { id: "ca", nameEs: "Canadá", nameEn: "Canada", group: "B", flagUrl: flag("ca") },
+  { id: "ba", nameEs: "Bosnia y Herzegovina", nameEn: "Bosnia and Herzegovina", group: "B", flagUrl: flag("ba") },
+  { id: "qa", nameEs: "Catar", nameEn: "Qatar", group: "B", flagUrl: flag("qa") },
+  { id: "ch", nameEs: "Suiza", nameEn: "Switzerland", group: "B", flagUrl: flag("ch") },
   // Grupo C
-  { id: "br", nameEs: "Brasil", group: "C", flagUrl: flag("br") },
-  { id: "ma", nameEs: "Marruecos", group: "C", flagUrl: flag("ma") },
-  { id: "ht", nameEs: "Haití", group: "C", flagUrl: flag("ht") },
-  { id: "gb-sct", nameEs: "Escocia", group: "C", flagUrl: flag("gb-sct") },
+  { id: "br", nameEs: "Brasil", nameEn: "Brazil", group: "C", flagUrl: flag("br") },
+  { id: "ma", nameEs: "Marruecos", nameEn: "Morocco", group: "C", flagUrl: flag("ma") },
+  { id: "ht", nameEs: "Haití", nameEn: "Haiti", group: "C", flagUrl: flag("ht") },
+  { id: "gb-sct", nameEs: "Escocia", nameEn: "Scotland", group: "C", flagUrl: flag("gb-sct") },
   // Grupo D
-  { id: "us", nameEs: "Estados Unidos", group: "D", flagUrl: flag("us") },
-  { id: "py", nameEs: "Paraguay", group: "D", flagUrl: flag("py") },
-  { id: "au", nameEs: "Australia", group: "D", flagUrl: flag("au") },
-  { id: "tr", nameEs: "Turquía", group: "D", flagUrl: flag("tr") },
+  { id: "us", nameEs: "Estados Unidos", nameEn: "United States", group: "D", flagUrl: flag("us") },
+  { id: "py", nameEs: "Paraguay", nameEn: "Paraguay", group: "D", flagUrl: flag("py") },
+  { id: "au", nameEs: "Australia", nameEn: "Australia", group: "D", flagUrl: flag("au") },
+  { id: "tr", nameEs: "Turquía", nameEn: "Turkey", group: "D", flagUrl: flag("tr") },
   // Grupo E
-  { id: "de", nameEs: "Alemania", group: "E", flagUrl: flag("de") },
-  { id: "cw", nameEs: "Curazao", group: "E", flagUrl: flag("cw") },
-  { id: "ci", nameEs: "Costa de Marfil", group: "E", flagUrl: flag("ci") },
-  { id: "ec", nameEs: "Ecuador", group: "E", flagUrl: flag("ec") },
+  { id: "de", nameEs: "Alemania", nameEn: "Germany", group: "E", flagUrl: flag("de") },
+  { id: "cw", nameEs: "Curazao", nameEn: "Curacao", group: "E", flagUrl: flag("cw") },
+  { id: "ci", nameEs: "Costa de Marfil", nameEn: "Ivory Coast", group: "E", flagUrl: flag("ci") },
+  { id: "ec", nameEs: "Ecuador", nameEn: "Ecuador", group: "E", flagUrl: flag("ec") },
   // Grupo F
-  { id: "nl", nameEs: "Países Bajos", group: "F", flagUrl: flag("nl") },
-  { id: "jp", nameEs: "Japón", group: "F", flagUrl: flag("jp") },
-  { id: "se", nameEs: "Suecia", group: "F", flagUrl: flag("se") },
-  { id: "tn", nameEs: "Túnez", group: "F", flagUrl: flag("tn") },
+  { id: "nl", nameEs: "Países Bajos", nameEn: "Netherlands", group: "F", flagUrl: flag("nl") },
+  { id: "jp", nameEs: "Japón", nameEn: "Japan", group: "F", flagUrl: flag("jp") },
+  { id: "se", nameEs: "Suecia", nameEn: "Sweden", group: "F", flagUrl: flag("se") },
+  { id: "tn", nameEs: "Túnez", nameEn: "Tunisia", group: "F", flagUrl: flag("tn") },
   // Grupo G
-  { id: "be", nameEs: "Bélgica", group: "G", flagUrl: flag("be") },
-  { id: "eg", nameEs: "Egipto", group: "G", flagUrl: flag("eg") },
-  { id: "ir", nameEs: "Irán", group: "G", flagUrl: flag("ir") },
-  { id: "nz", nameEs: "Nueva Zelanda", group: "G", flagUrl: flag("nz") },
+  { id: "be", nameEs: "Bélgica", nameEn: "Belgium", group: "G", flagUrl: flag("be") },
+  { id: "eg", nameEs: "Egipto", nameEn: "Egypt", group: "G", flagUrl: flag("eg") },
+  { id: "ir", nameEs: "Irán", nameEn: "Iran", group: "G", flagUrl: flag("ir") },
+  { id: "nz", nameEs: "Nueva Zelanda", nameEn: "New Zealand", group: "G", flagUrl: flag("nz") },
   // Grupo H
-  { id: "es", nameEs: "España", group: "H", flagUrl: flag("es") },
-  { id: "cv", nameEs: "Cabo Verde", group: "H", flagUrl: flag("cv") },
-  { id: "sa", nameEs: "Arabia Saudí", group: "H", flagUrl: flag("sa") },
-  { id: "uy", nameEs: "Uruguay", group: "H", flagUrl: flag("uy") },
+  { id: "es", nameEs: "España", nameEn: "Spain", group: "H", flagUrl: flag("es") },
+  { id: "cv", nameEs: "Cabo Verde", nameEn: "Cape Verde", group: "H", flagUrl: flag("cv") },
+  { id: "sa", nameEs: "Arabia Saudí", nameEn: "Saudi Arabia", group: "H", flagUrl: flag("sa") },
+  { id: "uy", nameEs: "Uruguay", nameEn: "Uruguay", group: "H", flagUrl: flag("uy") },
   // Grupo I
-  { id: "fr", nameEs: "Francia", group: "I", flagUrl: flag("fr") },
-  { id: "sn", nameEs: "Senegal", group: "I", flagUrl: flag("sn") },
-  { id: "iq", nameEs: "Irak", group: "I", flagUrl: flag("iq") },
-  { id: "no", nameEs: "Noruega", group: "I", flagUrl: flag("no") },
+  { id: "fr", nameEs: "Francia", nameEn: "France", group: "I", flagUrl: flag("fr") },
+  { id: "sn", nameEs: "Senegal", nameEn: "Senegal", group: "I", flagUrl: flag("sn") },
+  { id: "iq", nameEs: "Irak", nameEn: "Iraq", group: "I", flagUrl: flag("iq") },
+  { id: "no", nameEs: "Noruega", nameEn: "Norway", group: "I", flagUrl: flag("no") },
   // Grupo J
-  { id: "ar", nameEs: "Argentina", group: "J", flagUrl: flag("ar") },
-  { id: "dz", nameEs: "Argelia", group: "J", flagUrl: flag("dz") },
-  { id: "at", nameEs: "Austria", group: "J", flagUrl: flag("at") },
-  { id: "jo", nameEs: "Jordania", group: "J", flagUrl: flag("jo") },
+  { id: "ar", nameEs: "Argentina", nameEn: "Argentina", group: "J", flagUrl: flag("ar") },
+  { id: "dz", nameEs: "Argelia", nameEn: "Algeria", group: "J", flagUrl: flag("dz") },
+  { id: "at", nameEs: "Austria", nameEn: "Austria", group: "J", flagUrl: flag("at") },
+  { id: "jo", nameEs: "Jordania", nameEn: "Jordan", group: "J", flagUrl: flag("jo") },
   // Grupo K
-  { id: "pt", nameEs: "Portugal", group: "K", flagUrl: flag("pt") },
-  { id: "cd", nameEs: "República Democrática del Congo", group: "K", flagUrl: flag("cd") },
-  { id: "uz", nameEs: "Uzbekistán", group: "K", flagUrl: flag("uz") },
-  { id: "co", nameEs: "Colombia", group: "K", flagUrl: flag("co") },
+  { id: "pt", nameEs: "Portugal", nameEn: "Portugal", group: "K", flagUrl: flag("pt") },
+  { id: "cd", nameEs: "República Democrática del Congo", nameEn: "DR Congo", group: "K", flagUrl: flag("cd") },
+  { id: "uz", nameEs: "Uzbekistán", nameEn: "Uzbekistan", group: "K", flagUrl: flag("uz") },
+  { id: "co", nameEs: "Colombia", nameEn: "Colombia", group: "K", flagUrl: flag("co") },
   // Grupo L
-  { id: "gb-eng", nameEs: "Inglaterra", group: "L", flagUrl: flag("gb-eng") },
-  { id: "hr", nameEs: "Croacia", group: "L", flagUrl: flag("hr") },
-  { id: "gh", nameEs: "Ghana", group: "L", flagUrl: flag("gh") },
-  { id: "pa", nameEs: "Panamá", group: "L", flagUrl: flag("pa") },
+  { id: "gb-eng", nameEs: "Inglaterra", nameEn: "England", group: "L", flagUrl: flag("gb-eng") },
+  { id: "hr", nameEs: "Croacia", nameEn: "Croatia", group: "L", flagUrl: flag("hr") },
+  { id: "gh", nameEs: "Ghana", nameEn: "Ghana", group: "L", flagUrl: flag("gh") },
+  { id: "pa", nameEs: "Panamá", nameEn: "Panama", group: "L", flagUrl: flag("pa") },
 ];
 
 /** Normaliza un nombre para emparejar (sin acentos, minúsculas, sin signos). */

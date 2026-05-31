@@ -95,7 +95,7 @@ export default function PlayerPickList({
         </div>
       </div>
 
-      <p className="mb-2 text-xs text-muted">{filtered.length} jugadores</p>
+      <p className="mb-2 text-sm text-muted">{filtered.length} jugadores</p>
 
       <ul className="max-h-[60vh] space-y-1.5 overflow-auto pr-1">
         {filtered.map((p) => {
@@ -103,17 +103,19 @@ export default function PlayerPickList({
           return (
             <li
               key={p.id}
-              className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${
+              className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 ${
                 taken ? "border-line bg-surface-2/50 opacity-60" : "border-line bg-surface-2"
               }`}
             >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className={`badge ${POSITION_COLORS[p.primary_position]}`}>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className={`badge ${POSITION_COLORS[p.primary_position]} text-sm`}>
                   {p.primary_position}
                 </span>
                 <div className="min-w-0">
-                  <p className={`truncate font-medium ${taken ? "line-through" : ""}`}>{p.full_name}</p>
-                  <p className="truncate text-xs text-muted">
+                  <p className={`truncate text-base font-semibold sm:text-lg ${taken ? "line-through" : ""}`}>
+                    {p.full_name}
+                  </p>
+                  <p className="truncate text-sm text-muted">
                     {p.team_name}
                     {p.club ? ` · ${p.club}` : ""}
                   </p>
@@ -121,16 +123,16 @@ export default function PlayerPickList({
               </div>
               {canPick && onPick ? (
                 <button
-                  className="btn-gold shrink-0 px-3 py-1.5 text-xs"
+                  className="btn-gold shrink-0 px-4 py-2 text-sm"
                   disabled={taken || picking !== null}
                   onClick={() => handlePick(p.id)}
                 >
                   {picking === p.id ? "…" : "Elegir"}
                 </button>
               ) : taken ? (
-                <span className="badge shrink-0 bg-slate-500/15 text-slate-300">Elegido</span>
+                <span className="badge shrink-0 bg-slate-500/15 text-sm text-slate-300">Elegido</span>
               ) : (
-                <span className="badge shrink-0 bg-pitch-500/15 text-pitch-300">Libre</span>
+                <span className="badge shrink-0 bg-pitch-500/15 text-sm text-pitch-300">Libre</span>
               )}
             </li>
           );

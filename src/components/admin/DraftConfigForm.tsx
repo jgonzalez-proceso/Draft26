@@ -23,7 +23,10 @@ export default function DraftConfigForm({
   const router = useRouter();
   const [mode, setMode] = useState<DraftMode>(initialMode);
   const [timerEnabled, setTimerEnabled] = useState(initialTimerEnabled);
-  const [turnSeconds, setTurnSeconds] = useState(initialTurnSeconds);
+  // Límite por turno en pasos de 30 min (mín. 30 min, máx. 10 h).
+  const [turnSeconds, setTurnSeconds] = useState(() =>
+    snapToStep(initialTurnSeconds),
+  );
   const [picks, setPicks] = useState<number | "">(initialPicksPerUser ?? "");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -89,17 +92,23 @@ export default function DraftConfigForm({
         </label>
         {timerEnabled && (
           <div className="mt-3">
-            <label className="mb-1 block text-xs text-muted">Segundos por pick: {turnSeconds}s</label>
+            <label className="mb-1 block text-xs text-muted">
+              Tiempo por turno: <span className="font-semibold text-foreground">{formatTurn(turnSeconds)}</span>
+            </label>
             <input
               type="range"
-              min={15}
-              max={300}
-              step={15}
+              min={1800}
+              max={36000}
+              step={1800}
               value={turnSeconds}
               disabled={locked}
               onChange={(e) => setTurnSeconds(Number(e.target.value))}
               className="w-full accent-gold-500"
             />
+            <div className="mt-1 flex justify-between text-[11px] text-muted">
+              <span>30 min</span>
+              <span>10 h</span>
+            </div>
           </div>
         )}
       </div>
@@ -127,4 +136,21 @@ export default function DraftConfigForm({
       </button>
     </form>
   );
+}
+
+// Ajusta cualquier valor al paso de 30 min dentro de [30 min, 10 h].
+function snapToStep(seconds: number): number {
+  const step = 1800;
+  const min = 1800;
+  const max = 36000;
+  const snapped = Math.round((seconds || min) / step) * step;
+  return Math.min(max, Math.max(min, snapped));
+}
+
+// "1 h 30 min" / "2 h" / "30 min"
+function formatTurn(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  if (h === 0) return `${m} min`;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
 }

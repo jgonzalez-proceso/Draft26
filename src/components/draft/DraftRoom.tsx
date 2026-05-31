@@ -240,23 +240,23 @@ export default function DraftRoom({
             return (
               <div key={m.user_id} className="rounded-lg border border-line bg-surface-2 p-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold">{m.display_name}</span>
-                  <span className="text-xs text-muted">{squad.length} jug.</span>
+                  <span className="text-lg font-semibold">{m.display_name}</span>
+                  <span className="text-sm text-muted">{squad.length} jug.</span>
                 </div>
                 <div className="mt-2 space-y-2">
                   {POSITIONS.map((pos) => {
                     const inPos = squad.filter((p) => p.primary_position === pos);
                     if (inPos.length === 0) return null;
                     return (
-                      <div key={pos} className="flex flex-wrap items-center gap-1">
-                        <span className={`badge ${POSITION_COLORS[pos]}`}>{pos}</span>
+                      <div key={pos} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className={`badge ${POSITION_COLORS[pos]} text-sm`}>{pos}</span>
                         {inPos.map((p) => (
-                          <span key={p.id} className="text-xs">{p.full_name}</span>
+                          <span key={p.id} className="text-sm">{p.full_name}</span>
                         ))}
                       </div>
                     );
                   })}
-                  {squad.length === 0 && <p className="text-xs text-muted">Sin jugadores aún.</p>}
+                  {squad.length === 0 && <p className="text-sm text-muted">Sin jugadores aún.</p>}
                 </div>
               </div>
             );

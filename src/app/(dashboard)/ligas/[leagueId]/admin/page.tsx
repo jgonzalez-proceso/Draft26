@@ -39,6 +39,9 @@ export default async function AdminPage({
           drawn={drawn}
           membersCount={members.length}
           hasPicks={(pickCount ?? 0) > 0}
+          hasDraft={!!draft}
+          timerEnabled={!!draft?.timer_enabled}
+          turnSeconds={draft?.turn_seconds ?? 1800}
         />
       </div>
 

@@ -61,7 +61,7 @@ export default function SquadTable({
           )}
         </div>
         <div className="flex-1">
-          <h2 className="font-display text-2xl tracking-wide">{teamName}</h2>
+          <h2 className="font-display text-2xl tracking-[0.08em]">{teamName}</h2>
           <p className="text-xs text-blue-200">
             {teamGroup ? `Grupo ${teamGroup} · ` : ""}
             {players.length > 0

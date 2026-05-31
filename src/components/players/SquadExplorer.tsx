@@ -114,7 +114,7 @@ export default function SquadExplorer({
                         )}
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate font-display text-lg tracking-wide">{t.name}</span>
+                        <span className="block truncate font-display text-lg tracking-[0.07em]">{t.name}</span>
                         {t.pending ? (
                           <span className="block text-xs font-medium text-gold-400/80">
                             Pendiente de cargar plantilla

@@ -39,17 +39,17 @@ export default function LeagueNav({
             <h1 className="text-2xl font-bold">{name}</h1>
             <StatusBadge status={status} />
           </div>
-          <nav className="-mb-px flex gap-1 overflow-x-auto border-b border-line">
+          <nav className="-mb-px flex gap-2 overflow-x-auto border-b border-line">
             {tabs.map((t) => {
               const active = t.href === base ? pathname === base : pathname.startsWith(t.href);
               return (
                 <Link
                   key={t.href}
                   href={t.href}
-                  className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                  className={`whitespace-nowrap border-b-2 px-4 py-3 font-display text-xl tracking-[0.08em] transition-colors ${
                     active
                       ? "border-gold-500 text-gold-300"
-                      : "border-transparent text-muted hover:text-foreground"
+                      : "border-transparent text-foreground/70 hover:text-foreground"
                   }`}
                 >
                   {t.label}

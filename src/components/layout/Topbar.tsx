@@ -25,7 +25,7 @@ export default function Topbar({ displayName }: { displayName: string }) {
         <div className="flex items-center gap-6">
           <Link href="/ligas" className="flex items-center gap-2" onClick={() => setOpen(false)}>
             <Image src="/icon.png" alt="" width={30} height={30} className="rounded" />
-            <span className="font-display text-2xl tracking-wide">
+            <span className="font-display text-2xl tracking-[0.08em]">
               Draft <span className="text-gold-400">Mundial 26</span>
             </span>
           </Link>
@@ -35,7 +35,7 @@ export default function Topbar({ displayName }: { displayName: string }) {
               <Link
                 key={n.href}
                 href={n.href}
-                className={`font-display text-lg tracking-wide transition-colors ${
+                className={`font-display text-lg tracking-[0.07em] transition-colors ${
                   isActive(n.href)
                     ? "text-gold-300"
                     : "text-muted hover:text-foreground"
@@ -89,7 +89,7 @@ export default function Topbar({ displayName }: { displayName: string }) {
               key={n.href}
               href={n.href}
               onClick={() => setOpen(false)}
-              className={`flex min-h-[48px] items-center font-display text-xl tracking-wide ${
+              className={`flex min-h-[48px] items-center font-display text-xl tracking-[0.08em] ${
                 isActive(n.href) ? "text-gold-300" : "text-foreground"
               }`}
             >

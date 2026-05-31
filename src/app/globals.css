@@ -28,14 +28,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Títulos con la display deportiva (Bebas Neue) */
+/* Títulos con la display deportiva (Bebas Neue).
+   Bebas es muy condensada → necesita interletrado generoso para leerse bien. */
 h1,
 h2,
 h3,
 .font-display {
   font-family: var(--font-display), Impact, system-ui, sans-serif;
-  letter-spacing: 0.01em;
-  line-height: 1.05;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
 }
 h1 {
   font-size: clamp(1.9rem, 4vw, 3rem);

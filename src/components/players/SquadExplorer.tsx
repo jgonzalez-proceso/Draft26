@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useDraftRealtime, type DraftRealtimeState } from "@/hooks/useDraftRealtime";
 import SquadTable from "@/components/players/SquadTable";
+import { slugify } from "@/lib/wc2026Teams";
 import type { PlayerWithTeam } from "@/types/domain";
 
 interface Team {
@@ -11,6 +12,7 @@ interface Team {
   name: string;
   flag_url: string | null;
   group: string | null;
+  pending?: boolean;
 }
 
 export default function SquadExplorer({
@@ -79,9 +81,10 @@ export default function SquadExplorer({
           teamName={selTeam.name}
           teamFlag={selTeam.flag_url}
           teamGroup={selTeam.group}
+          teamSlug={slugify(selTeam.name)}
           players={playersByTeam.get(selTeam.id) ?? []}
           pickedIds={pickedIds}
-          canPick={isMyTurn}
+          canPick={isMyTurn && !selTeam.pending}
           onPick={onPick}
           onBack={() => setSelected(null)}
         />
@@ -102,7 +105,7 @@ export default function SquadExplorer({
                       onClick={() => setSelected(t.id)}
                       className="card flex items-center gap-3 p-3 text-left transition-colors hover:border-pitch-500"
                     >
-                      <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-gold-500/50 bg-surface-2">
+                      <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md border border-gold-500/50 bg-surface-2">
                         {t.flag_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={t.flag_url} alt={t.name} className="h-full w-full object-cover" />
@@ -111,8 +114,16 @@ export default function SquadExplorer({
                         )}
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold">{t.name}</span>
-                        <span className="block text-xs text-muted">{free}/{squad.length} libres</span>
+                        <span className="block truncate font-display text-lg tracking-wide">{t.name}</span>
+                        {t.pending ? (
+                          <span className="block text-xs font-medium text-gold-400/80">
+                            Pendiente de cargar plantilla
+                          </span>
+                        ) : (
+                          <span className="block text-xs text-muted">
+                            {free}/{squad.length} libres
+                          </span>
+                        )}
                       </span>
                     </button>
                   );

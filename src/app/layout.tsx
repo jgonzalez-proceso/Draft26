@@ -2,10 +2,18 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+// Cuerpo: Inter (variable, ultralegible). Títulos/nav: Bebas Neue (cartel deportivo).
+const inter = localFont({
+  src: "./fonts/Inter-latin.woff2",
+  variable: "--font-inter",
   weight: "100 900",
+  display: "swap",
+});
+const bebas = localFont({
+  src: "./fonts/BebasNeue-latin.woff2",
+  variable: "--font-display",
+  weight: "400",
+  display: "swap",
 });
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
@@ -27,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${bebas.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>

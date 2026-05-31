@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { POSITIONS, type PlayerWithTeam, type Position } from "@/types/domain";
 
 const GROUP_LABELS: Record<Position, string> = {
@@ -17,6 +17,7 @@ export default function SquadTable({
   teamName,
   teamFlag,
   teamGroup,
+  teamSlug,
   players,
   pickedIds,
   canPick,
@@ -26,6 +27,7 @@ export default function SquadTable({
   teamName: string;
   teamFlag: string | null;
   teamGroup: string | null;
+  teamSlug: string;
   players: PlayerWithTeam[];
   pickedIds: Set<string>;
   canPick: boolean;
@@ -59,21 +61,42 @@ export default function SquadTable({
           )}
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-extrabold uppercase tracking-wide">{teamName}</h2>
+          <h2 className="font-display text-2xl tracking-wide">{teamName}</h2>
           <p className="text-xs text-blue-200">
             {teamGroup ? `Grupo ${teamGroup} · ` : ""}
-            {players.length} convocados · {available} libres
+            {players.length > 0
+              ? `${players.length} convocados · ${available} libres`
+              : "Pendiente de cargar plantilla"}
           </p>
         </div>
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 rounded-md bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-950 transition-colors hover:bg-yellow-300"
-        >
-          <ArrowLeft className="h-4 w-4" /> Volver
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <a
+            href={`https://www.jornadaperfecta.com/mundial/equipo/${teamSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Alineación probable de ${teamName} (abre en jornadaperfecta.com)`}
+            className="inline-flex min-h-[40px] items-center gap-1 rounded-md bg-blue-950/40 px-3 py-1.5 text-sm font-semibold text-yellow-300 ring-1 ring-yellow-400/50 transition-colors hover:bg-blue-950/70"
+          >
+            <ExternalLink className="h-4 w-4" /> Alineación probable
+          </a>
+          <button
+            onClick={onBack}
+            className="inline-flex min-h-[40px] items-center gap-1 rounded-md bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-950 transition-colors hover:bg-yellow-300"
+          >
+            <ArrowLeft className="h-4 w-4" /> Volver
+          </button>
+        </div>
       </div>
 
       {/* Tabla por posiciones */}
+      {players.length === 0 ? (
+        <div className="px-4 py-10 text-center">
+          <p className="font-semibold text-slate-700">Pendiente de cargar plantilla</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Este equipo aún no tiene jugadores cargados. Consulta la alineación probable.
+          </p>
+        </div>
+      ) : (
       <div className="divide-y divide-slate-300">
         {POSITIONS.map((pos) => {
           const group = players.filter((p) => p.primary_position === pos);
@@ -132,6 +155,7 @@ export default function SquadTable({
           );
         })}
       </div>
+      )}
     </div>
   );
 }

@@ -22,6 +22,29 @@ body {
     radial-gradient(1200px 600px at 50% -10%, rgba(18, 183, 106, 0.12), transparent 60%),
     var(--background);
   min-height: 100vh;
+  /* Cuerpo más grande y legible (Inter) */
+  font-size: 1.0625rem; /* ~17px */
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Títulos con la display deportiva (Bebas Neue) */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display), Impact, system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+}
+h1 {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+}
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+h3 {
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
 }
 
 @layer components {

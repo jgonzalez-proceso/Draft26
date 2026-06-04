@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getLeagueContext } from "@/lib/leagues";
 import { createClient } from "@/lib/supabase/server";
 import TeamView from "@/components/teams/TeamView";
+import { fetchAllPlayers } from "@/lib/players";
 import type { DraftPick, PlayerWithTeam, UserTeamEntry } from "@/types/domain";
 
 export default async function EquiposPage({
@@ -16,8 +17,8 @@ export default async function EquiposPage({
   }
 
   const supabase = createClient();
-  const [{ data: rawPlayers }, { data: userTeams }, { data: picks }] = await Promise.all([
-    supabase.from("players").select("*, national_teams(name, flag_url)").order("full_name"),
+  const [rawPlayers, { data: userTeams }, { data: picks }] = await Promise.all([
+    fetchAllPlayers(supabase),
     supabase.from("user_teams").select("*").eq("league_id", params.leagueId),
     supabase.from("draft_picks").select("*").eq("league_id", params.leagueId).order("pick_number"),
   ]);

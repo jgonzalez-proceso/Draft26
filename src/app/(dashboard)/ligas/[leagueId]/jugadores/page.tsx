@@ -3,7 +3,7 @@ import { getLeagueContext } from "@/lib/leagues";
 import { createClient } from "@/lib/supabase/server";
 import SquadExplorer from "@/components/players/SquadExplorer";
 import { fetchAllPlayers } from "@/lib/players";
-import { WC2026_TEAMS, normalizeName } from "@/lib/wc2026Teams";
+import { WC2026_TEAMS, teamKey } from "@/lib/wc2026Teams";
 import type { DraftPick, PlayerWithTeam, UserTeamEntry } from "@/types/domain";
 
 export default async function JugadoresPage({
@@ -43,14 +43,14 @@ export default async function JugadoresPage({
   >();
   for (const t of rawTeams ?? []) {
     const row = t as { id: string; name: string; flag_url: string | null };
-    dbByName.set(normalizeName(row.name), row);
+    dbByName.set(teamKey(row.name), row);
   }
 
   // Lista autoritativa de 48 equipos en sus grupos. Los que existen en la BD
   // conservan su id real (y por tanto su plantilla); el resto van como
   // "pendiente de cargar plantilla".
   const teams = WC2026_TEAMS.map((wt) => {
-    const db = dbByName.get(normalizeName(wt.nameEs));
+    const db = dbByName.get(teamKey(wt.nameEs));
     return {
       id: db?.id ?? wt.id,
       name: wt.nameEs,

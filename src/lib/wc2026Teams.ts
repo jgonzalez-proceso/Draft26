@@ -91,6 +91,17 @@ export function normalizeName(name: string): string {
     .trim();
 }
 
+/** Alias de selecciones cuyo nombre difiere entre la BD y la lista canónica de 48. */
+const TEAM_ALIASES: Record<string, string> = {
+  "republica checa": "chequia", // la BD puede tener "República Checa"; la app usa "Chequia"
+};
+
+/** Clave canónica para emparejar equipos BD ↔ lista de 48 (resuelve alias). */
+export function teamKey(name: string): string {
+  const n = normalizeName(name);
+  return TEAM_ALIASES[n] ?? n;
+}
+
 /** Slug para la URL de jornadaperfecta (minúsculas, sin acentos, con guiones). */
 export function slugify(name: string): string {
   return normalizeName(name).replace(/\s+/g, "-");

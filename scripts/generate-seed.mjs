@@ -25,6 +25,11 @@ const FLAG = {
   Marruecos: "ma", Noruega: "no", "Nueva Zelanda": "nz", "Panamá": "pa",
   "Países Bajos": "nl", Portugal: "pt", "República Democrática del Congo": "cd",
   Senegal: "sn", "Sudáfrica": "za", Suecia: "se", Suiza: "ch", "Túnez": "tn",
+  // Selecciones añadidas para el cuadro completo de 48
+  "Arabia Saudí": "sa", Argelia: "dz", Australia: "au", "Canadá": "ca",
+  Catar: "qa", Ecuador: "ec", Ghana: "gh", Irak: "iq", "Irán": "ir",
+  Jordania: "jo", "México": "mx", Paraguay: "py", "República Checa": "cz",
+  "Turquía": "tr", Uruguay: "uy", "Uzbekistán": "uz",
 };
 
 function parseCsv(text) {

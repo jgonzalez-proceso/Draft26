@@ -32,7 +32,7 @@ registrarte y draftear necesitas un proyecto Supabase (abajo).
    ```
 2. En el **SQL Editor**, ejecuta en orden los archivos de `supabase/migrations/`
    (`0001` → `0006`).
-3. Ejecuta `supabase/seed.sql` para cargar **836 jugadores reales de 32 selecciones**
+3. Ejecuta `supabase/seed.sql` para cargar **1248 jugadores reales de 48 selecciones**
    (plantillas confirmadas). Para regenerarlo desde un CSV nuevo:
    `npm run seed` (lee `supabase/data/convocados_mundial_2026.csv`).
 4. `0005_cron.sql` necesita la extensión **pg_cron** (Database → Extensions) — es el

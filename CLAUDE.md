@@ -37,7 +37,7 @@ No hay framework de tests configurado todavía. La verificación se hace con `np
 1. Crear proyecto en Supabase Cloud. Copiar `.env.local.example` → `.env.local` y rellenar
    `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 2. Ejecutar en el SQL Editor, **en orden**, los archivos de `supabase/migrations/` (0001→0006)
-   y luego `supabase/seed.sql` (836 jugadores reales de 32 selecciones).
+   y luego `supabase/seed.sql` (1248 jugadores reales de 48 selecciones).
 3. `0005_cron.sql` requiere la extensión `pg_cron` (Database → Extensions).
 4. Para pruebas rápidas, desactivar la confirmación de email en Auth → Providers.
 

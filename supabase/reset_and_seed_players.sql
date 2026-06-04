@@ -1,4 +1,14 @@
 -- =====================================================================
+-- Reemplazo del catálogo de jugadores (32 -> 48 selecciones).
+-- Borra picks/equipos que referencian players (FK) y luego players,
+-- y re-siembra national_teams + players desde seed.sql. Transaccional.
+-- =====================================================================
+begin;
+delete from public.user_teams;
+delete from public.draft_picks;
+delete from public.players;
+
+-- =====================================================================
 -- Draft Mundial 26 — Seed de plantillas CONFIRMADAS (generado)
 -- Generado por scripts/generate-seed.mjs a partir del CSV de convocados.
 -- 48 selecciones · 1248 jugadores.
@@ -1313,3 +1323,5 @@ where not exists (
   select 1 from public.players p
   where p.full_name = v.full_name and p.national_team_id = t.id
 );
+
+commit;

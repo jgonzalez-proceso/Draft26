@@ -28,7 +28,7 @@ const FLAG = {
   // Selecciones añadidas para el cuadro completo de 48
   "Arabia Saudí": "sa", Argelia: "dz", Australia: "au", "Canadá": "ca",
   Catar: "qa", Ecuador: "ec", Ghana: "gh", Irak: "iq", "Irán": "ir",
-  Jordania: "jo", "México": "mx", Paraguay: "py", "República Checa": "cz",
+  Jordania: "jo", "México": "mx", Paraguay: "py", Chequia: "cz",
   "Turquía": "tr", Uruguay: "uy", "Uzbekistán": "uz",
 };
 

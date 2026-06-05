@@ -58,11 +58,13 @@ function SlotDrop({
       ) : (
         <div className="flex flex-col items-center gap-1">
           <div
-            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed bg-black/30 ${
-              isOver ? "scale-110 border-gold-400" : "border-white/60"
+            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-dashed bg-black/55 ${
+              isOver ? "scale-110 border-gold-400" : "border-white/70"
             }`}
           >
-            <span className={`badge ${POSITION_COLORS[pos]} px-1`}>{pos}</span>
+            <span className="text-[11px] font-extrabold tracking-wide text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {pos}
+            </span>
           </div>
         </div>
       )}
@@ -109,7 +111,7 @@ export function Chip({
           </span>
         )}
       </div>
-      <span className="max-w-[5.5rem] truncate rounded bg-black/65 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-tight text-white">
+      <span className="max-w-[6rem] truncate rounded bg-black/80 px-1.5 py-0.5 text-center text-[11px] font-bold leading-tight text-white ring-1 ring-black/40 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
         {lastName(player.full_name)}
       </span>
     </div>

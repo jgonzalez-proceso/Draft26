@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, X } from "lucide-react";
+import { normalizeName } from "@/lib/wc2026Teams";
 import {
   POSITIONS,
   POSITION_COLORS,
@@ -22,22 +24,64 @@ export default function PlayerPickList({
   teams: { id: string; name: string }[];
 }) {
   const [search, setSearch] = useState("");
-  const [pos, setPos] = useState<Position | "ALL">("ALL");
-  const [teamId, setTeamId] = useState<string>("ALL");
+  const [selPos, setSelPos] = useState<Set<Position>>(new Set());
+  const [selTeams, setSelTeams] = useState<Set<string>>(new Set());
   const [onlyAvailable, setOnlyAvailable] = useState(true);
   const [picking, setPicking] = useState<string | null>(null);
+
+  // Desplegable de selecciones (multi)
+  const [teamsOpen, setTeamsOpen] = useState(false);
+  const [teamQuery, setTeamQuery] = useState("");
+  const teamsRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar el panel de selecciones al hacer clic fuera
+  useEffect(() => {
+    if (!teamsOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (teamsRef.current && !teamsRef.current.contains(e.target as Node)) {
+        setTeamsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [teamsOpen]);
+
+  const teamName = useMemo(() => new Map(teams.map((t) => [t.id, t.name])), [teams]);
+
+  const teamMatches = useMemo(() => {
+    const q = normalizeName(teamQuery);
+    return q ? teams.filter((t) => normalizeName(t.name).includes(q)) : teams;
+  }, [teams, teamQuery]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return players.filter((p) => {
       const taken = pickedIds.has(p.id) || !p.is_available;
       if (onlyAvailable && taken) return false;
-      if (pos !== "ALL" && p.primary_position !== pos) return false;
-      if (teamId !== "ALL" && p.national_team_id !== teamId) return false;
+      if (selPos.size && !selPos.has(p.primary_position)) return false;
+      if (selTeams.size && !selTeams.has(p.national_team_id)) return false;
       if (q && !p.full_name.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [players, pickedIds, onlyAvailable, pos, teamId, search]);
+  }, [players, pickedIds, onlyAvailable, selPos, selTeams, search]);
+
+  function togglePos(p: Position) {
+    setSelPos((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p);
+      else next.add(p);
+      return next;
+    });
+  }
+
+  function toggleTeam(id: string) {
+    setSelTeams((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function handlePick(id: string) {
     if (!onPick) return;
@@ -59,30 +103,87 @@ export default function PlayerPickList({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="flex flex-wrap gap-2">
-          <select className="input max-w-[12rem]" value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-            <option value="ALL">Todas las selecciones</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Selecciones (multi) */}
+          <div className="relative" ref={teamsRef}>
+            <button
+              type="button"
+              onClick={() => setTeamsOpen((v) => !v)}
+              className="btn flex items-center gap-2 border border-line bg-surface-2 px-3 py-1.5 text-sm"
+              aria-expanded={teamsOpen}
+            >
+              {selTeams.size ? `Selecciones · ${selTeams.size}` : "Todas las selecciones"}
+              <ChevronDown className="h-4 w-4" />
+            </button>
+
+            {teamsOpen && (
+              <div className="absolute left-0 z-20 mt-1 w-72 max-w-[80vw] rounded-lg border border-line bg-surface p-2 shadow-xl">
+                <input
+                  className="input mb-2"
+                  placeholder="Buscar selección…"
+                  value={teamQuery}
+                  autoFocus
+                  onChange={(e) => setTeamQuery(e.target.value)}
+                />
+                <div className="mb-2 flex items-center justify-between px-1 text-xs text-muted">
+                  <span>{selTeams.size} seleccionadas</span>
+                  {selTeams.size > 0 && (
+                    <button
+                      type="button"
+                      className="text-gold-300 hover:underline"
+                      onClick={() => setSelTeams(new Set())}
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+                <ul className="max-h-60 space-y-0.5 overflow-y-auto">
+                  {teamMatches.map((t) => (
+                    <li key={t.id}>
+                      <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-surface-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-pitch-500"
+                          checked={selTeams.has(t.id)}
+                          onChange={() => toggleTeam(t.id)}
+                        />
+                        <span className="truncate">{t.name}</span>
+                      </label>
+                    </li>
+                  ))}
+                  {teamMatches.length === 0 && (
+                    <li className="px-2 py-2 text-xs text-muted">Sin coincidencias.</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Posiciones (multi) */}
           <div className="flex gap-1">
             <button
-              onClick={() => setPos("ALL")}
-              className={`btn px-3 py-1.5 text-xs ${pos === "ALL" ? "bg-pitch-500 text-white" : "border border-line bg-surface-2"}`}
+              type="button"
+              onClick={() => setSelPos(new Set())}
+              className={`btn px-3 py-1.5 text-xs ${
+                selPos.size === 0 ? "bg-pitch-500 text-white" : "border border-line bg-surface-2"
+              }`}
             >
               Todas
             </button>
             {POSITIONS.map((p) => (
               <button
                 key={p}
-                onClick={() => setPos(p)}
-                className={`btn px-3 py-1.5 text-xs ${pos === p ? "bg-pitch-500 text-white" : "border border-line bg-surface-2"}`}
+                type="button"
+                onClick={() => togglePos(p)}
+                className={`btn px-3 py-1.5 text-xs ${
+                  selPos.has(p) ? "bg-pitch-500 text-white" : "border border-line bg-surface-2"
+                }`}
               >
                 {p}
               </button>
             ))}
           </div>
+
           <label className="flex items-center gap-2 text-xs text-muted">
             <input
               type="checkbox"
@@ -93,6 +194,28 @@ export default function PlayerPickList({
             Solo disponibles
           </label>
         </div>
+
+        {/* Chips de selecciones elegidas */}
+        {selTeams.size > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {[...selTeams].map((id) => (
+              <span
+                key={id}
+                className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-xs"
+              >
+                {teamName.get(id) ?? "—"}
+                <button
+                  type="button"
+                  aria-label={`Quitar ${teamName.get(id) ?? ""}`}
+                  onClick={() => toggleTeam(id)}
+                  className="text-muted hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <p className="mb-2 text-sm text-muted">{filtered.length} jugadores</p>

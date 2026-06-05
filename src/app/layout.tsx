@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -25,6 +25,20 @@ export const metadata: Metadata = {
   title: "Draft Mundial 26",
   description:
     "Draft fantástico del Mundial 2026 — sortea el orden y elige por turnos a las estrellas de cada selección.",
+  applicationName: "Draft 26",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Draft 26", statusBarStyle: "black-translucent" },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#04150c",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

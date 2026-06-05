@@ -30,7 +30,7 @@ export default function Topbar({ displayName }: { displayName: string }) {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-5 md:flex">
+          <nav className="app-hide hidden items-center gap-5 md:flex">
             {NAV.map((n) => (
               <Link
                 key={n.href}
@@ -65,17 +65,25 @@ export default function Topbar({ displayName }: { displayName: string }) {
           </form>
         </div>
 
-        {/* Botón hamburguesa (móvil) */}
+        {/* Botón hamburguesa (móvil) — oculto en modo app */}
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Cerrar menú" : "Abrir menú"}
           aria-expanded={open}
           aria-controls="mobile-nav"
-          className="grid h-11 w-11 place-items-center rounded-lg text-foreground outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-gold-400 md:hidden"
+          className="app-hide grid h-11 w-11 place-items-center rounded-lg text-foreground outline-none transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-gold-400 md:hidden"
         >
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
+
+        {/* En modo app (sin hamburguesa) dejamos siempre accesible Salir en móvil */}
+        <form action="/auth/signout" method="post" className="app-only md:hidden">
+          <button className="btn-ghost px-3 py-2 text-sm" type="submit" aria-label="Salir">
+            <LogOut className="h-4 w-4" />
+            Salir
+          </button>
+        </form>
       </div>
 
       {/* Panel desplegable móvil */}

@@ -121,6 +121,14 @@ export interface UserTeamEntry {
   created_at: string;
 }
 
+// Alineación guardada por (liga, usuario): formación + ids por hueco.
+export interface UserLineup {
+  league_id: string;
+  user_id: string;
+  formation: string;
+  slots: (string | null)[];
+}
+
 // Jugador con datos de su selección (para listados y tarjetas).
 export interface PlayerWithTeam extends Player {
   team_name: string;

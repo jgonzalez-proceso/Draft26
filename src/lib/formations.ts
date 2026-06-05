@@ -56,3 +56,27 @@ export function assignSquad(
   const bench = [...queues.GK, ...queues.DEF, ...queues.MID, ...queues.FWD];
   return { lineup, bench };
 }
+
+// Ids de jugador por hueco (longitud = nº de huecos de la formación) según la
+// asignación automática. Sirve de punto de partida cuando no hay alineación guardada.
+export function autoSlotIds(squad: PlayerWithTeam[], formation: string): (string | null)[] {
+  return assignSquad(squad, formation).lineup.map((pl) => pl.player?.id ?? null);
+}
+
+// Construye la alineación a partir de ids por hueco (colocación manual / guardada).
+// Cualquier jugador puede ir en cualquier hueco; los ids que ya no están en la
+// plantilla se ignoran. El banquillo es la plantilla menos los colocados.
+export function buildLineupFromIds(
+  squad: PlayerWithTeam[],
+  formation: string,
+  ids: (string | null)[]
+): { lineup: PlacedSlot[]; bench: PlayerWithTeam[] } {
+  const byId = new Map(squad.map((p) => [p.id, p]));
+  const lineup = formationSlots(formation).map((slot, i) => ({
+    slot,
+    player: ids[i] ? byId.get(ids[i] as string) ?? null : null,
+  }));
+  const placed = new Set(lineup.map((pl) => pl.player?.id).filter(Boolean) as string[]);
+  const bench = squad.filter((p) => !placed.has(p.id));
+  return { lineup, bench };
+}

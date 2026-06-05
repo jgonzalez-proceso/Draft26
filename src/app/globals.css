@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Modo app (PWA instalada / standalone) ──────────────────────────────
+   En modo app ocultamos la navegación "web" (enlaces de la Topbar y pestañas
+   de liga): se navega por la portada. `.app-only` es lo contrario: solo visible
+   en modo app (p. ej. un atajo de salida o "volver al menú"). */
+.app-only {
+  display: none !important;
+}
+@media (display-mode: standalone) {
+  .app-hide {
+    display: none !important;
+  }
+  .app-only {
+    display: inline-flex !important;
+  }
+}
+
 /* Tema oscuro deportivo por defecto (cómodo para el draft en vivo) */
 :root {
   --background: #0b1220;

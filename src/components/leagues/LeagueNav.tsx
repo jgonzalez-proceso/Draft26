@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import StatusBadge from "@/components/leagues/StatusBadge";
 import type { LeagueStatus } from "@/types/domain";
 
@@ -36,10 +37,21 @@ export default function LeagueNav({
       {!onMenu && (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h1 className="text-2xl font-bold">{name}</h1>
+            <div className="flex items-center gap-2">
+              {/* En modo app: volver a la portada (no hay pestañas) */}
+              <Link
+                href={base}
+                aria-label="Volver al menú"
+                className="app-only items-center gap-1 rounded-md border border-line bg-surface-2 px-2 py-1.5 text-sm text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Menú
+              </Link>
+              <h1 className="text-2xl font-bold">{name}</h1>
+            </div>
             <StatusBadge status={status} />
           </div>
-          <nav className="-mb-px flex gap-2 overflow-x-auto border-b border-line">
+          <nav className="app-hide -mb-px flex gap-2 overflow-x-auto border-b border-line">
             {tabs.map((t) => {
               const active = t.href === base ? pathname === base : pathname.startsWith(t.href);
               return (

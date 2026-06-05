@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getMyLeagues } from "@/lib/leagues";
-import StatusBadge from "@/components/leagues/StatusBadge";
+import LeagueCard from "@/components/leagues/LeagueCard";
 
 export default async function LigasPage() {
   const leagues = await getMyLeagues();
@@ -36,23 +36,7 @@ export default async function LigasPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {leagues.map(({ league, role }) => (
-            <Link
-              key={league.id}
-              href={`/ligas/${league.id}`}
-              className="card p-5 transition-colors hover:border-pitch-500"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="text-lg font-bold">{league.name}</h2>
-                <StatusBadge status={league.status} />
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                Mundial {league.world_cup_year} · Máx. {league.max_participants} ·{" "}
-                {role === "admin" ? "Admin" : "Participante"}
-              </p>
-              <p className="mt-3 font-mono text-xs text-muted">
-                Código: <span className="text-gold-400">{league.invite_code}</span>
-              </p>
-            </Link>
+            <LeagueCard key={league.id} league={league} role={role} />
           ))}
         </div>
       )}

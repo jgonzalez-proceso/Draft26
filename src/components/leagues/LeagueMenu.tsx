@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { LogOut, Trophy, Copy, Share2, Check } from "lucide-react";
+import { LogOut, Trophy, Copy, Share2, Check, RotateCcw } from "lucide-react";
 import { LEAGUE_STATUS_LABELS, type LeagueStatus } from "@/types/domain";
 
 interface Member {
@@ -75,8 +75,22 @@ export default function LeagueMenu({
         marginBottom: "-24px",
       }}
     >
+      {/* Móvil en vertical: la portada es muy apaisada → pide girar el dispositivo */}
       <div
-        className="grid place-items-center overflow-hidden bg-[#04150c] px-1"
+        className="hidden flex-col items-center justify-center gap-4 bg-[#04150c] px-8 text-center max-sm:portrait:flex"
+        style={{ height: `calc(100svh - ${TOPBAR}px)` }}
+      >
+        <RotateCcw className="h-12 w-12 text-amber-300" />
+        <p className="font-display text-xl uppercase tracking-wide text-amber-200">
+          Gira el móvil
+        </p>
+        <p className="max-w-xs text-sm text-emerald-200/80">
+          El menú principal se ve en horizontal. Pon el teléfono en posición apaisada.
+        </p>
+      </div>
+
+      <div
+        className="grid place-items-center overflow-hidden bg-[#04150c] px-1 max-sm:portrait:hidden"
         style={{ height: `calc(100svh - ${TOPBAR}px)` }}
       >
         {/* Lienzo escalado para caber sin scroll; sirve de contenedor de

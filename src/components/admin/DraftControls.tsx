@@ -125,6 +125,22 @@ export default function DraftControls({
           </button>
         )}
 
+        {hasDraft && hasPicks && (
+          <button
+            className="btn bg-amber-500/90 text-white hover:bg-amber-500"
+            disabled={busy !== null}
+            onClick={() =>
+              call(
+                "admin_undo_last_pick",
+                "undo",
+                "¿Deshacer el último pick? Se liberará el jugador y el turno volverá a ese participante (el draft quedará activo)."
+              )
+            }
+          >
+            {busy === "undo" ? "Deshaciendo…" : "Deshacer último pick"}
+          </button>
+        )}
+
         {(hasPicks || status === "draft_finished" || status === "draft_active" || status === "draft_paused") && (
           <button
             className="btn bg-red-500/90 text-white hover:bg-red-500"

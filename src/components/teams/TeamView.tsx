@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Lock } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Lock, Save } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -51,6 +51,11 @@ export default function TeamView({
 
   const canEdit = userId === initialUserId || isAdmin;
 
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveOk, setSaveOk] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const playerById = useMemo(() => new Map(players.map((p) => [p.id, p])), [players]);
 
   const squad = useMemo(
@@ -75,26 +80,29 @@ export default function TeamView({
   );
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Guarda (debounced) la alineación del usuario visible, saneando ids que ya no
-  // están en su plantilla (p. ej. tras un undo del admin).
-  function persist(formation: string, slots: (string | null)[]) {
-    if (!canEdit) return;
+  async function handleSave() {
+    if (!canEdit || saving) return;
+    setSaving(true);
+    setSaveOk(false);
+    setSaveError(null);
     const ids = new Set(squad.map((p) => p.id));
-    const sane = slots.map((s) => (s && ids.has(s) ? s : null));
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    const uid = userId;
-    saveTimer.current = setTimeout(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.rpc("save_lineup", {
-        p_league_id: leagueId,
-        p_user_id: uid,
-        p_formation: formation,
-        p_slots: sane,
-      });
-      if (error) console.error("save_lineup:", error);
-    }, 600);
+    const sane = currentSlots.map((s) => (s && ids.has(s) ? s : null));
+    const supabase = createClient();
+    const { error } = await supabase.rpc("save_lineup", {
+      p_league_id: leagueId,
+      p_user_id: userId,
+      p_formation: currentFormation,
+      p_slots: sane,
+    });
+    setSaving(false);
+    if (error) {
+      setSaveError(error.message);
+    } else {
+      setDirty(false);
+      setSaveOk(true);
+      setTimeout(() => setSaveOk(false), 2500);
+    }
   }
 
   function changeFormation(f: string) {
@@ -102,7 +110,8 @@ export default function TeamView({
     const newSlots = autoSlotIds(squad, f);
     setFormations((prev) => new Map(prev).set(userId, f));
     setSlotsMap((prev) => new Map(prev).set(userId, newSlots));
-    persist(f, newSlots);
+    setDirty(true);
+    setSaveOk(false);
   }
 
   function onDragEnd(e: DragEndEvent) {
@@ -130,7 +139,8 @@ export default function TeamView({
     }
 
     setSlotsMap((prev) => new Map(prev).set(userId, next));
-    persist(currentFormation, next);
+    setDirty(true);
+    setSaveOk(false);
   }
 
   const countByPos = (pos: string) => squad.filter((p) => p.primary_position === pos).length;
@@ -161,7 +171,8 @@ export default function TeamView({
           <Pitch lineup={lineup} editable={canEdit} />
           {canEdit && (
             <p className="text-xs text-muted">
-              Arrastra los jugadores entre el campo y el banquillo para colocar tu formación.
+              Arrastra los jugadores entre el campo y el banquillo.{" "}
+              {dirty && <span className="text-gold-400">Tienes cambios sin guardar.</span>}
             </p>
           )}
         </div>
@@ -202,6 +213,35 @@ export default function TeamView({
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={handleSave}
+                  disabled={saving || (!dirty && !saveError)}
+                  className={`btn mt-3 w-full py-2 text-sm font-semibold ${
+                    saveOk
+                      ? "bg-green-600/80 text-white"
+                      : dirty || saveError
+                      ? "btn-primary"
+                      : "border border-line bg-surface-2 text-muted"
+                  }`}
+                >
+                  {saving ? (
+                    "Guardando…"
+                  ) : saveOk ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Check className="h-4 w-4" /> Guardado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Save className="h-4 w-4" />
+                      {dirty ? "Guardar cambios" : "Guardar"}
+                    </span>
+                  )}
+                </button>
+                {saveError && (
+                  <p className="mt-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {saveError}
+                  </p>
+                )}
               </>
             ) : (
               <p className="mt-2 text-xs text-muted">

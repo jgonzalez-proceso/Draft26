@@ -55,6 +55,11 @@ export default function DraftRoom({
     });
   }
 
+  function reorderWatchlist(newOrder: string[]) {
+    setWatchlist(newOrder);
+    localStorage.setItem(`watchlist_${leagueId}_${userId}`, JSON.stringify(newOrder));
+  }
+
   const playerById = useMemo(
     () => new Map(players.map((p) => [p.id, p])),
     [players]
@@ -225,6 +230,7 @@ export default function DraftRoom({
               isMyTurn={isMyTurn}
               onRemove={toggleWatchlist}
               onPick={onPick}
+              onReorder={reorderWatchlist}
             />
           )}
 

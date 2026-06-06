@@ -85,21 +85,24 @@ export default function TeamView({
     const sane = slots.map((s) => (s && ids.has(s) ? s : null));
     if (saveTimer.current) clearTimeout(saveTimer.current);
     const uid = userId;
-    saveTimer.current = setTimeout(() => {
+    saveTimer.current = setTimeout(async () => {
       const supabase = createClient();
-      supabase.rpc("save_lineup", {
+      const { error } = await supabase.rpc("save_lineup", {
         p_league_id: leagueId,
         p_user_id: uid,
         p_formation: formation,
         p_slots: sane,
       });
+      if (error) console.error("save_lineup:", error);
     }, 600);
   }
 
   function changeFormation(f: string) {
     if (!canEdit) return;
+    const newSlots = autoSlotIds(squad, f);
     setFormations((prev) => new Map(prev).set(userId, f));
-    persist(f, currentSlots);
+    setSlotsMap((prev) => new Map(prev).set(userId, newSlots));
+    persist(f, newSlots);
   }
 
   function onDragEnd(e: DragEndEvent) {

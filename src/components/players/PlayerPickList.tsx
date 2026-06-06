@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { Bookmark, BookmarkCheck, ChevronDown, X } from "lucide-react";
 import { normalizeName } from "@/lib/wc2026Teams";
 import {
   POSITIONS,
@@ -16,12 +16,16 @@ export default function PlayerPickList({
   canPick = false,
   onPick,
   teams,
+  watchlist,
+  onWatchlistToggle,
 }: {
   players: PlayerWithTeam[];
   pickedIds: Set<string>;
   canPick?: boolean;
   onPick?: (playerId: string) => Promise<void>;
   teams: { id: string; name: string }[];
+  watchlist?: Set<string>;
+  onWatchlistToggle?: (id: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const [selPos, setSelPos] = useState<Set<Position>>(new Set());
@@ -244,6 +248,17 @@ export default function PlayerPickList({
                   </p>
                 </div>
               </div>
+              {!taken && onWatchlistToggle && (
+                <button
+                  aria-label={watchlist?.has(p.id) ? "Quitar de preselección" : "Añadir a preselección"}
+                  onClick={(e) => { e.stopPropagation(); onWatchlistToggle(p.id); }}
+                  className={`shrink-0 ${watchlist?.has(p.id) ? "text-gold-400" : "text-muted hover:text-gold-400"}`}
+                >
+                  {watchlist?.has(p.id)
+                    ? <BookmarkCheck className="h-5 w-5" />
+                    : <Bookmark className="h-5 w-5" />}
+                </button>
+              )}
               {canPick && onPick ? (
                 <button
                   className="btn-gold shrink-0 px-4 py-2 text-sm"

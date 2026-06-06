@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Timer } from "lucide-react";
+import { ArrowDownUp, Timer } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeName } from "@/lib/wc2026Teams";
 import { POSITION_COLORS, POSITION_LABELS, type Position } from "@/types/domain";
@@ -42,6 +42,9 @@ export default function HistorialTable({
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reversed, setReversed] = useState(false);
+
+  const orderedPicks = reversed ? [...picks].reverse() : picks;
 
   const matches = useMemo(() => {
     const q = normalizeName(query);
@@ -78,9 +81,19 @@ export default function HistorialTable({
 
   return (
     <div className="card overflow-hidden">
-      <div className="border-b border-line px-4 py-3">
-        <h3 className="font-bold">Historial de picks</h3>
-        <p className="text-xs text-muted">{picks.length} elecciones</p>
+      <div className="flex items-center justify-between border-b border-line px-4 py-3">
+        <div>
+          <h3 className="font-bold">Historial de picks</h3>
+          <p className="text-xs text-muted">{picks.length} elecciones</p>
+        </div>
+        <button
+          onClick={() => setReversed((r) => !r)}
+          className="btn-ghost flex items-center gap-1.5 px-2 py-1.5 text-xs"
+          title={reversed ? "Ver del primero al último" : "Ver del último al primero"}
+        >
+          <ArrowDownUp className="h-3.5 w-3.5" />
+          {reversed ? "Más antiguos" : "Más recientes"}
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -96,7 +109,7 @@ export default function HistorialTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {picks.map((p) => {
+            {orderedPicks.map((p) => {
               const fecha = new Date(p.created_at).toLocaleString("es-ES", {
                 day: "2-digit",
                 month: "2-digit",

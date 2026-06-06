@@ -6,6 +6,7 @@ import { useDraftRealtime, type DraftRealtimeState } from "@/hooks/useDraftRealt
 import { Hourglass, Flag, Timer } from "lucide-react";
 import PickTimer from "@/components/draft/PickTimer";
 import PlayerPickList from "@/components/players/PlayerPickList";
+import WatchlistPanel from "@/components/draft/WatchlistPanel";
 import StatusBadge from "@/components/leagues/StatusBadge";
 import {
   POSITION_COLORS,
@@ -36,6 +37,23 @@ export default function DraftRoom({
 }) {
   const { draft, picks, teams, refetch } = useDraftRealtime(leagueId, initial);
   const [error, setError] = useState<string | null>(null);
+
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem(`watchlist_${leagueId}_${userId}`) ?? "[]");
+    } catch { return []; }
+  });
+
+  function toggleWatchlist(playerId: string) {
+    setWatchlist((prev) => {
+      const next = prev.includes(playerId)
+        ? prev.filter((id) => id !== playerId)
+        : [...prev, playerId];
+      localStorage.setItem(`watchlist_${leagueId}_${userId}`, JSON.stringify(next));
+      return next;
+    });
+  }
 
   const playerById = useMemo(
     () => new Map(players.map((p) => [p.id, p])),
@@ -165,6 +183,8 @@ export default function DraftRoom({
               canPick={isMyTurn}
               onPick={onPick}
               teams={teamList}
+              watchlist={new Set(watchlist)}
+              onWatchlistToggle={toggleWatchlist}
             />
           </div>
         </div>
@@ -196,6 +216,17 @@ export default function DraftRoom({
               })}
             </ol>
           </div>
+
+          {isActive && (
+            <WatchlistPanel
+              watchlist={watchlist}
+              playerById={playerById}
+              pickedIds={pickedIds}
+              isMyTurn={isMyTurn}
+              onRemove={toggleWatchlist}
+              onPick={onPick}
+            />
+          )}
 
           <div className="card p-4">
             <h3 className="mb-3 font-bold">Historial</h3>

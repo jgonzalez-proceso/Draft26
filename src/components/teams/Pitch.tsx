@@ -91,6 +91,8 @@ export function Chip({
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 50 }
     : undefined;
 
+  const onBench = fromSlot === null;
+
   return (
     <div
       ref={setNodeRef}
@@ -114,6 +116,11 @@ export function Chip({
       <span className="max-w-[6rem] truncate rounded bg-black/80 px-1.5 py-0.5 text-center text-[11px] font-bold leading-tight text-white ring-1 ring-black/40 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
         {lastName(player.full_name)}
       </span>
+      {onBench && (
+        <span className={`badge px-1.5 py-px text-[9px] leading-tight ${POSITION_COLORS[player.primary_position]}`}>
+          {player.primary_position}
+        </span>
+      )}
     </div>
   );
 }

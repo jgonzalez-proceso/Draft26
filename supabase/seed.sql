@@ -152,7 +152,7 @@ from (values
   ('Lionel Messi', 'Argentina', 'FWD', 'Inter Miami'),
   ('Nicolas Paz', 'Argentina', 'MID', 'Como'),
   ('Giuliano Simeone', 'Argentina', 'FWD', 'Atletico Madrid'),
-  ('Emiliano Martínez', 'Argentina', 'MID', 'Aston Villa'),
+  ('Emiliano Martínez', 'Argentina', 'GK', 'Aston Villa'),
   ('Valentín Barco', 'Argentina', 'MID', 'Strasbourg'),
   ('Rodrigo De Paul', 'Argentina', 'MID', 'Inter Miami'),
   ('Enzo Fernandez', 'Argentina', 'MID', 'Chelsea'),

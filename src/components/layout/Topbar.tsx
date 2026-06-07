@@ -27,7 +27,7 @@ export default function Topbar({ displayName }: { displayName: string }) {
     pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Marca + nav desktop */}
         <div className="flex items-center gap-6">

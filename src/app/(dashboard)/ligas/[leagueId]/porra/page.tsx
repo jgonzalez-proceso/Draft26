@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getLeagueContext } from "@/lib/leagues";
 import { createClient } from "@/lib/supabase/server";
 import PorraView from "@/components/porra/PorraView";
-import type { PorraPrediction, PorraResult } from "@/types/domain";
+import type { PorraPrediction, PorraResult, PorraResultSnapshot } from "@/types/domain";
 
 export default async function PorraPage({
   params,
@@ -14,17 +14,23 @@ export default async function PorraPage({
 
   const supabase = createClient();
 
-  const [{ data: predictions }, { data: porraResult }] = await Promise.all([
-    supabase
-      .from("porra_predictions")
-      .select("*")
-      .eq("league_id", params.leagueId),
-    supabase
-      .from("porra_results")
-      .select("*")
-      .eq("league_id", params.leagueId)
-      .maybeSingle(),
-  ]);
+  const [{ data: predictions }, { data: porraResult }, { data: snapshots }] =
+    await Promise.all([
+      supabase
+        .from("porra_predictions")
+        .select("*")
+        .eq("league_id", params.leagueId),
+      supabase
+        .from("porra_results")
+        .select("*")
+        .eq("league_id", params.leagueId)
+        .maybeSingle(),
+      supabase
+        .from("porra_result_snapshots")
+        .select("*")
+        .eq("league_id", params.leagueId)
+        .order("created_at", { ascending: false }),
+    ]);
 
   const members = ctx.members.map((m) => ({
     user_id: m.user_id,
@@ -42,6 +48,7 @@ export default async function PorraPage({
       myPrediction={myPrediction as PorraPrediction | null}
       allPredictions={(predictions ?? []) as PorraPrediction[]}
       initialPorraResult={porraResult as PorraResult | null}
+      initialSnapshots={(snapshots ?? []) as PorraResultSnapshot[]}
       isAdmin={ctx.isAdmin}
     />
   );

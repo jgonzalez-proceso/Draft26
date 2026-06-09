@@ -172,3 +172,11 @@ export interface PorraResult {
   created_at: string;
   updated_at: string;
 }
+
+export interface PorraResultSnapshot {
+  id: string;
+  league_id: string;
+  results: PorraResultEntry[];
+  label: string;
+  created_at: string;
+}

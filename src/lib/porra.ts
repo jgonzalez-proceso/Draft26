@@ -8,8 +8,7 @@ export function getPredictionPoints(
   if (diff === 0) return 10;
   if (diff === 1) return 7;
   if (diff === 2) return 5;
-  if (diff === 3) return 3;
-  if (diff === 4) return 1;
+  if (diff === 3) return 2;
   return 0;
 }
 

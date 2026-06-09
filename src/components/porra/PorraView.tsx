@@ -33,9 +33,12 @@ import {
   Info,
   X,
   Beer,
+  Trash2,
+  RotateCcw,
+  History,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { PorraPrediction, PorraResult, PorraResultEntry } from "@/types/domain";
+import type { PorraPrediction, PorraResult, PorraResultEntry, PorraResultSnapshot } from "@/types/domain";
 import { computePorraScores, type PorraScoreRow } from "@/lib/porra";
 
 // ---------------------------------------------------------------------------
@@ -204,9 +207,8 @@ function ScoringGuide({ onClose }: { onClose: () => void }) {
             { diff: "Exacta", pts: 10, color: "text-gold-300 bg-gold-500/10" },
             { diff: "±1 posición", pts: 7, color: "text-green-300 bg-green-500/10" },
             { diff: "±2 posiciones", pts: 5, color: "text-green-300 bg-green-500/10" },
-            { diff: "±3 posiciones", pts: 3, color: "text-foreground bg-surface-2" },
-            { diff: "±4 posiciones", pts: 1, color: "text-muted bg-surface-2" },
-            { diff: "±5 o más", pts: 0, color: "text-muted bg-surface-2" },
+            { diff: "±3 posiciones", pts: 2, color: "text-foreground bg-surface-2" },
+            { diff: "±4 o más", pts: 0, color: "text-muted bg-surface-2" },
           ].map(({ diff, pts, color }) => (
             <div key={diff} className={`rounded-lg px-3 py-2 ${color}`}>
               <p className="text-xs opacity-70">{diff}</p>
@@ -275,6 +277,7 @@ interface Props {
   myPrediction: PorraPrediction | null;
   allPredictions: PorraPrediction[];
   initialPorraResult: PorraResult | null;
+  initialSnapshots: PorraResultSnapshot[];
   isAdmin: boolean;
 }
 
@@ -290,6 +293,7 @@ export default function PorraView({
   myPrediction,
   allPredictions: initialAllPredictions,
   initialPorraResult,
+  initialSnapshots,
   isAdmin,
 }: Props) {
   const nameMap = useMemo(
@@ -331,6 +335,9 @@ export default function PorraView({
   const [isFinal, setIsFinal] = useState(initialPorraResult?.is_final ?? false);
   const [adminDirty, setAdminDirty] = useState(!initialPorraResult?.results?.length);
   const [savingAdmin, setSavingAdmin] = useState(false);
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [localSnapshots, setLocalSnapshots] = useState<PorraResultSnapshot[]>(initialSnapshots);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
@@ -446,16 +453,28 @@ export default function PorraView({
         p_league_id: leagueId,
         p_results: results,
         p_is_final: isFinal,
+        p_label: snapshotLabel.trim(),
       });
       if (error) throw error;
+      const now = new Date().toISOString();
       setPorraResult((prev) => ({
         id: prev?.id ?? crypto.randomUUID(),
         league_id: leagueId,
         results,
         is_final: isFinal,
-        created_at: prev?.created_at ?? new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: prev?.created_at ?? now,
+        updated_at: now,
       }));
+      const autoLabel = snapshotLabel.trim() ||
+        new Date().toLocaleString("es-ES", {
+          day: "2-digit", month: "2-digit", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        });
+      setLocalSnapshots((prev) => [
+        { id: crypto.randomUUID(), league_id: leagueId, results, label: autoLabel, created_at: now },
+        ...prev,
+      ]);
+      setSnapshotLabel("");
       setAdminDirty(false);
       setActiveTab("clasificacion");
     } catch (err) {
@@ -463,6 +482,32 @@ export default function PorraView({
       alert("Error al guardar los resultados. Inténtalo de nuevo.");
     } finally {
       setSavingAdmin(false);
+    }
+  }
+
+  function handleLoadSnapshot(snap: PorraResultSnapshot) {
+    const orderedIds = [...snap.results]
+      .sort((a, b) => a.real_position - b.real_position)
+      .map((r) => r.member_user_id);
+    setAdminItems(orderedIds);
+    setSnapshotLabel(snap.label);
+    setAdminDirty(true);
+  }
+
+  async function handleDeleteSnapshot(snapshotId: string) {
+    setDeletingId(snapshotId);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("delete_porra_snapshot", {
+        p_snapshot_id: snapshotId,
+      });
+      if (error) throw error;
+      setLocalSnapshots((prev) => prev.filter((s) => s.id !== snapshotId));
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el snapshot. Inténtalo de nuevo.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -967,43 +1012,109 @@ export default function PorraView({
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-line p-3">
+          {/* Label input + final checkbox + save */}
+          <div className="space-y-3 rounded-xl border border-line p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+              Guardar clasificación
+            </p>
             <input
-              type="checkbox"
-              checked={isFinal}
-              onChange={(e) => {
-                setIsFinal(e.target.checked);
-                setAdminDirty(true);
-              }}
-              className="h-4 w-4 rounded border-line accent-gold-500"
+              type="text"
+              placeholder="Etiqueta (ej. Jornada 5)"
+              value={snapshotLabel}
+              onChange={(e) => setSnapshotLabel(e.target.value)}
+              className="input w-full"
             />
-            <div>
-              <p className="text-sm font-medium">Marcar como resultados definitivos</p>
-              <p className="text-xs text-muted">
-                Bloqueará las predicciones de todos los participantes.
-              </p>
-            </div>
-          </label>
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isFinal}
+                onChange={(e) => {
+                  setIsFinal(e.target.checked);
+                  setAdminDirty(true);
+                }}
+                className="h-4 w-4 rounded border-line accent-gold-500"
+              />
+              <div>
+                <p className="text-sm font-medium">Resultados definitivos</p>
+                <p className="text-xs text-muted">
+                  Bloqueará las predicciones de todos los participantes.
+                </p>
+              </div>
+            </label>
+            <button
+              onClick={handleSaveAdmin}
+              disabled={savingAdmin || !adminDirty}
+              className="btn btn-gold w-full"
+            >
+              {savingAdmin ? (
+                "Guardando…"
+              ) : !adminDirty ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Clasificación guardada
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Guardar y ver porra
+                </>
+              )}
+            </button>
+          </div>
 
-          <button
-            onClick={handleSaveAdmin}
-            disabled={savingAdmin || !adminDirty}
-            className="btn btn-gold w-full"
-          >
-            {savingAdmin ? (
-              "Guardando…"
-            ) : !adminDirty ? (
-              <>
-                <Check className="h-4 w-4" />
-                Clasificación guardada
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Guardar clasificación y ver porra
-              </>
-            )}
-          </button>
+          {/* Snapshot history */}
+          {localSnapshots.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <History className="h-4 w-4 text-muted" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                  Historial de clasificaciones
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {localSnapshots.map((snap) => {
+                  const top3 = [...snap.results]
+                    .sort((a, b) => a.real_position - b.real_position)
+                    .slice(0, 3)
+                    .map((r) => nameMap.get(r.member_user_id)?.split(" ")[0] ?? "?");
+                  return (
+                    <div
+                      key={snap.id}
+                      className="card flex flex-wrap items-center gap-3 p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{snap.label}</p>
+                        <p className="text-xs text-muted">
+                          {top3.map((n, i) => (
+                            <span key={i}>
+                              {i > 0 && " · "}
+                              <span className="text-gold-400">{i + 1}.</span> {n}
+                            </span>
+                          ))}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleLoadSnapshot(snap)}
+                        title="Cargar en el formulario"
+                        className="btn btn-ghost flex items-center gap-1.5 text-xs"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Cargar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSnapshot(snap.id)}
+                        disabled={deletingId === snap.id}
+                        title="Eliminar snapshot"
+                        className="text-muted transition-colors hover:text-red-400 disabled:opacity-40"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

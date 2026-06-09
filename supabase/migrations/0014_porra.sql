@@ -1,6 +1,7 @@
 -- La Porra: juego paralelo de predicción de clasificación final del fantasy.
 -- Cada miembro predice en qué posición quedará cada equipo.
 -- El admin fija los resultados reales y el sistema calcula los puntos.
+-- IMPORTANTE: una predicción enviada queda bloqueada y no puede modificarse.
 
 create table if not exists public.porra_predictions (
   id           uuid        default gen_random_uuid() primary key,
@@ -31,16 +32,16 @@ alter table public.porra_results    enable row level security;
 do $$ begin
   create policy "members_read_porra_predictions"
     on public.porra_predictions for select
-    using (is_league_member(league_id));
+    using (public.is_league_member(league_id, auth.uid()));
 exception when duplicate_object then null; end $$;
 
 do $$ begin
   create policy "members_read_porra_results"
     on public.porra_results for select
-    using (is_league_member(league_id));
+    using (public.is_league_member(league_id, auth.uid()));
 exception when duplicate_object then null; end $$;
 
--- Guarda (o actualiza) la predicción del usuario en curso.
+-- Guarda la predicción del usuario. Solo puede enviarse UNA VEZ; no se puede modificar.
 create or replace function save_porra_prediction(
   p_league_id   uuid,
   p_predictions jsonb   -- [{member_user_id, predicted_position}]
@@ -55,11 +56,19 @@ declare
   v_count   int;
   v_members int;
 begin
-  if not is_league_member(p_league_id) then
+  if not public.is_league_member(p_league_id, auth.uid()) then
     raise exception 'No eres miembro de esta liga';
   end if;
 
-  -- Impedir edición si los resultados son definitivos
+  -- Bloquear si ya existe una predicción enviada
+  if exists (
+    select 1 from porra_predictions
+    where league_id = p_league_id and user_id = v_user_id
+  ) then
+    raise exception 'Ya enviaste tu predicción. No puede modificarse.';
+  end if;
+
+  -- Impedir envío si los resultados son definitivos
   if exists (
     select 1 from porra_results
     where league_id = p_league_id and is_final = true
@@ -86,10 +95,7 @@ begin
   end if;
 
   insert into porra_predictions (league_id, user_id, predictions)
-  values (p_league_id, v_user_id, p_predictions)
-  on conflict (league_id, user_id) do update
-    set predictions = excluded.predictions,
-        updated_at  = now();
+  values (p_league_id, v_user_id, p_predictions);
 end;
 $$;
 

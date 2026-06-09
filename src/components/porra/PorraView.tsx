@@ -30,6 +30,9 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
+  Info,
+  X,
+  Beer,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { PorraPrediction, PorraResult, PorraResultEntry } from "@/types/domain";
@@ -43,16 +46,14 @@ function SortableItem({
   position,
   name,
   isMe,
-  disabled,
 }: {
   id: string;
   position: number;
   name: string;
   isMe: boolean;
-  disabled?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id, disabled });
+    useSortable({ id });
 
   return (
     <div
@@ -65,16 +66,14 @@ function SortableItem({
       <span className="w-7 shrink-0 text-center font-display text-xl leading-none text-gold-400">
         {position}
       </span>
-      {!disabled && (
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab touch-none text-muted active:cursor-grabbing"
-          aria-label="Arrastrar para reordenar"
-        >
-          <GripVertical className="h-5 w-5" />
-        </button>
-      )}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab touch-none text-muted active:cursor-grabbing"
+        aria-label="Arrastrar para reordenar"
+      >
+        <GripVertical className="h-5 w-5" />
+      </button>
       {position === 1 && <Trophy className="h-4 w-4 shrink-0 text-gold-400" />}
       {position === 2 && <Medal className="h-4 w-4 shrink-0 text-slate-400" />}
       {position === 3 && <Medal className="h-4 w-4 shrink-0 text-amber-700" />}
@@ -89,13 +88,51 @@ function SortableItem({
 }
 
 // ---------------------------------------------------------------------------
-// Mini leaderboard (used in admin live preview)
+// StaticPredictionList  (read-only, no DnD)
+// ---------------------------------------------------------------------------
+function StaticPredictionList({
+  orderedIds,
+  nameMap,
+  userId,
+}: {
+  orderedIds: string[];
+  nameMap: Map<string, string>;
+  userId: string;
+}) {
+  return (
+    <div className="space-y-2">
+      {orderedIds.map((uid, idx) => (
+        <div key={uid} className="card flex items-center gap-3 p-3">
+          <span className="w-7 shrink-0 text-center font-display text-xl leading-none text-gold-400">
+            {idx + 1}
+          </span>
+          <span className="w-5 shrink-0">
+            {idx === 0 && <Trophy className="h-4 w-4 text-gold-400" />}
+            {idx === 1 && <Medal className="h-4 w-4 text-slate-400" />}
+            {idx === 2 && <Medal className="h-4 w-4 text-amber-700" />}
+          </span>
+          <span className="flex-1 font-medium leading-tight">
+            {nameMap.get(uid) ?? uid.slice(0, 8)}
+          </span>
+          {uid === userId && (
+            <span className="rounded-full bg-pitch-500/20 px-2 py-0.5 text-xs text-pitch-300">
+              Tú
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MiniLeaderboard  (live preview in admin tab)
 // ---------------------------------------------------------------------------
 function MiniLeaderboard({ rows, userId }: { rows: PorraScoreRow[]; userId: string }) {
   if (rows.length === 0)
     return (
       <p className="py-4 text-center text-xs text-muted">
-        Añade predicciones para ver la previsión.
+        Aún no hay predicciones enviadas.
       </p>
     );
   return (
@@ -145,6 +182,85 @@ function MiniLeaderboard({ rows, userId }: { rows: PorraScoreRow[]; userId: stri
 }
 
 // ---------------------------------------------------------------------------
+// ScoringGuide  (puntuaciones + premio)
+// ---------------------------------------------------------------------------
+function ScoringGuide({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="card space-y-5 p-5">
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="text-xl font-bold">Sistema de puntuación</h2>
+        <button onClick={onClose} className="text-muted hover:text-foreground">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Position points */}
+      <div>
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted">
+          Puntos por posición
+        </h3>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {[
+            { diff: "Exacta", pts: 10, color: "text-gold-300 bg-gold-500/10" },
+            { diff: "±1 posición", pts: 7, color: "text-green-300 bg-green-500/10" },
+            { diff: "±2 posiciones", pts: 5, color: "text-green-300 bg-green-500/10" },
+            { diff: "±3 posiciones", pts: 3, color: "text-foreground bg-surface-2" },
+            { diff: "±4 posiciones", pts: 1, color: "text-muted bg-surface-2" },
+            { diff: "±5 o más", pts: 0, color: "text-muted bg-surface-2" },
+          ].map(({ diff, pts, color }) => (
+            <div key={diff} className={`rounded-lg px-3 py-2 ${color}`}>
+              <p className="text-xs opacity-70">{diff}</p>
+              <p className="text-lg font-bold leading-tight">{pts} pts</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bonuses */}
+      <div>
+        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted">
+          Bonus especiales
+        </h3>
+        <div className="space-y-2">
+          {[
+            { label: "Acertar el campeón exacto", pts: "+5" },
+            { label: "Acertar el último clasificado exacto", pts: "+3" },
+            { label: "Acertar los 3 del podio (en cualquier orden)", pts: "+8" },
+            {
+              label: "Acertar el podio exacto y en orden (reemplaza al anterior)",
+              pts: "+15",
+              highlight: true,
+            },
+          ].map(({ label, pts, highlight }) => (
+            <div
+              key={label}
+              className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 ${
+                highlight ? "bg-gold-500/10" : "bg-surface-2"
+              }`}
+            >
+              <span className={`text-sm ${highlight ? "font-medium text-gold-200" : ""}`}>
+                <Star className="mr-1.5 inline h-3.5 w-3.5 text-gold-400" />
+                {label}
+              </span>
+              <span className="shrink-0 font-bold text-gold-300">{pts}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Prize */}
+      <div className="rounded-xl border border-gold-500/40 bg-gold-500/5 p-4 text-center">
+        <Beer className="mx-auto mb-2 h-8 w-8 text-gold-400" />
+        <p className="text-sm font-semibold uppercase tracking-wider text-muted">Premio</p>
+        <p className="mt-1 text-lg font-bold text-gold-300">
+          El ganador será invitado por los demás al Claxón
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 interface Member {
@@ -162,7 +278,7 @@ interface Props {
   isAdmin: boolean;
 }
 
-type TabId = "mi-porra" | "clasificacion" | "admin";
+type TabId = "mi-porra" | "predicciones" | "clasificacion" | "admin";
 
 // ---------------------------------------------------------------------------
 // PorraView
@@ -172,7 +288,7 @@ export default function PorraView({
   userId,
   members,
   myPrediction,
-  allPredictions,
+  allPredictions: initialAllPredictions,
   initialPorraResult,
   isAdmin,
 }: Props) {
@@ -181,7 +297,10 @@ export default function PorraView({
     [members],
   );
 
-  // ── Prediction state ──────────────────────────────────────────────────────
+  // ── All predictions (local state so we can add mine after saving) ─────────
+  const [predictions, setPredictions] = useState<PorraPrediction[]>(initialAllPredictions);
+
+  // ── Prediction form state ─────────────────────────────────────────────────
   const initialItems = useMemo<string[]>(() => {
     if (myPrediction?.predictions?.length) {
       return [...myPrediction.predictions]
@@ -192,11 +311,11 @@ export default function PorraView({
   }, [myPrediction, members]);
 
   const [items, setItems] = useState<string[]>(initialItems);
+  const [isLocked, setIsLocked] = useState(!!myPrediction);
   const [isDirty, setIsDirty] = useState(!myPrediction);
   const [saving, setSaving] = useState(false);
 
   // ── Admin results state ───────────────────────────────────────────────────
-  // porraResult lives in state so we can update it after save without reload
   const [porraResult, setPorraResult] = useState<PorraResult | null>(initialPorraResult);
 
   const initialAdminItems = useMemo<string[]>(() => {
@@ -210,19 +329,17 @@ export default function PorraView({
 
   const [adminItems, setAdminItems] = useState<string[]>(initialAdminItems);
   const [isFinal, setIsFinal] = useState(initialPorraResult?.is_final ?? false);
-  // Enable save button immediately when no results exist yet
   const [adminDirty, setAdminDirty] = useState(!initialPorraResult?.results?.length);
   const [savingAdmin, setSavingAdmin] = useState(false);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [showScoring, setShowScoring] = useState(false);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const hasResults = !!porraResult?.results?.length;
   const isFinalResults = porraResult?.is_final ?? false;
 
-  // Default tab: admin if no results yet (so they land on the input form),
-  // clasificacion once results are published, mi-porra for non-admins.
   const defaultTab: TabId = hasResults
     ? "clasificacion"
     : isAdmin
@@ -235,24 +352,24 @@ export default function PorraView({
     if (!hasResults) return [];
     return computePorraScores(
       members.map((m) => ({ user_id: m.user_id, display_name: m.display_name })),
-      allPredictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
+      predictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
       porraResult!.results,
     );
-  }, [members, allPredictions, porraResult, hasResults]);
+  }, [members, predictions, porraResult, hasResults]);
 
-  // ── Live preview scores (from current adminItems, updates on every drag) ──
+  // ── Live preview scores (real-time from adminItems) ───────────────────────
   const liveScores = useMemo<PorraScoreRow[]>(() => {
-    if (!allPredictions.length) return [];
+    if (!predictions.length) return [];
     const liveResults: PorraResultEntry[] = adminItems.map((uid, idx) => ({
       member_user_id: uid,
       real_position: idx + 1,
     }));
     return computePorraScores(
       members.map((m) => ({ user_id: m.user_id, display_name: m.display_name })),
-      allPredictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
+      predictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
       liveResults,
     );
-  }, [adminItems, allPredictions, members]);
+  }, [adminItems, predictions, members]);
 
   const myScore = scores.find((s) => s.userId === userId);
 
@@ -286,16 +403,29 @@ export default function PorraView({
     setSaving(true);
     try {
       const supabase = createClient();
-      const predictions = items.map((uid, idx) => ({
+      const preds = items.map((uid, idx) => ({
         member_user_id: uid,
         predicted_position: idx + 1,
       }));
       const { error } = await supabase.rpc("save_porra_prediction", {
         p_league_id: leagueId,
-        p_predictions: predictions,
+        p_predictions: preds,
       });
       if (error) throw error;
+      // Lock the form and add to local predictions list
+      setIsLocked(true);
       setIsDirty(false);
+      const newPred: PorraPrediction = {
+        id: crypto.randomUUID(),
+        league_id: leagueId,
+        user_id: userId,
+        predictions: preds,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setPredictions((prev) => [...prev.filter((p) => p.user_id !== userId), newPred]);
+      // Jump to see everyone's predictions
+      setActiveTab("predicciones");
     } catch (err) {
       console.error(err);
       alert("Error al guardar la predicción. Inténtalo de nuevo.");
@@ -318,7 +448,6 @@ export default function PorraView({
         p_is_final: isFinal,
       });
       if (error) throw error;
-      // Update local state — no page reload needed
       setPorraResult((prev) => ({
         id: prev?.id ?? crypto.randomUUID(),
         league_id: leagueId,
@@ -328,7 +457,6 @@ export default function PorraView({
         updated_at: new Date().toISOString(),
       }));
       setAdminDirty(false);
-      // Jump straight to the leaderboard
       setActiveTab("clasificacion");
     } catch (err) {
       console.error(err);
@@ -339,10 +467,10 @@ export default function PorraView({
   }
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
-  // "Clasificación" is visible to admins always (even before first save),
-  // and to regular members once results exist.
   const tabs: Array<{ id: TabId; label: string }> = [
     { id: "mi-porra", label: "Mi Porra" },
+    // "Predicciones" visible once user has submitted their own
+    ...(isLocked ? [{ id: "predicciones" as TabId, label: "Predicciones" }] : []),
     ...(hasResults || isAdmin ? [{ id: "clasificacion" as TabId, label: "Clasificación" }] : []),
     ...(isAdmin ? [{ id: "admin" as TabId, label: "Resultados (admin)" }] : []),
   ];
@@ -351,18 +479,30 @@ export default function PorraView({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">La Porra</h1>
-        <p className="mt-1 text-sm text-muted">
-          Predice la clasificación final del fantasy. ¡Gana el más acertado!
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">La Porra</h1>
+          <p className="mt-1 text-sm text-muted">
+            Predice la clasificación final del fantasy. ¡Gana el más acertado!
+          </p>
+        </div>
+        <button
+          onClick={() => setShowScoring((v) => !v)}
+          className="btn btn-ghost flex items-center gap-2 text-sm"
+        >
+          <Info className="h-4 w-4" />
+          Puntuaciones
+        </button>
       </div>
 
-      {/* Participation + status banner */}
+      {/* Scoring guide (toggle) */}
+      {showScoring && <ScoringGuide onClose={() => setShowScoring(false)} />}
+
+      {/* Participation + status */}
       <div className="card flex flex-wrap items-center gap-3 p-3">
         <Users className="h-4 w-4 shrink-0 text-muted" />
         <span className="text-sm text-muted">
-          <span className="font-semibold text-foreground">{allPredictions.length}</span> de{" "}
+          <span className="font-semibold text-foreground">{predictions.length}</span> de{" "}
           <span className="font-semibold text-foreground">{members.length}</span> participantes
           han enviado su predicción
         </span>
@@ -403,17 +543,39 @@ export default function PorraView({
       {/* ── Tab: Mi Porra ────────────────────────────────────────────────── */}
       {activeTab === "mi-porra" && (
         <div className="space-y-4">
-          {isFinalResults ? (
-            <div className="card p-6 text-center">
-              <Lock className="mx-auto mb-2 h-7 w-7 text-muted" />
-              <p className="text-sm text-muted">
-                Los resultados son definitivos. Las predicciones están cerradas.
-              </p>
+          {isLocked || isFinalResults ? (
+            <div className="space-y-3">
+              {/* Lock notice */}
+              <div className="card flex items-center gap-3 p-3">
+                <Lock className="h-4 w-4 shrink-0 text-gold-400" />
+                <p className="text-sm">
+                  {isFinalResults
+                    ? "Los resultados son definitivos. Las predicciones están cerradas."
+                    : "Tu predicción ha sido enviada y no puede modificarse."}
+                </p>
+                {isLocked && !isFinalResults && (
+                  <button
+                    onClick={() => setActiveTab("predicciones")}
+                    className="btn btn-ghost ml-auto text-xs"
+                  >
+                    Ver todas
+                  </button>
+                )}
+              </div>
+              {/* Read-only list */}
+              <StaticPredictionList
+                orderedIds={items}
+                nameMap={nameMap}
+                userId={userId}
+              />
             </div>
           ) : (
             <>
               <p className="text-sm text-muted">
-                Arrastra los equipos para ordenarlos. La posición&nbsp;1 es el campeón previsto.
+                Arrastra los equipos para ordenarlos. La posición&nbsp;1 es el campeón previsto.{" "}
+                <strong className="text-foreground">
+                  Una vez enviada, la predicción no puede modificarse.
+                </strong>
               </p>
               <DndContext
                 sensors={sensors}
@@ -445,21 +607,15 @@ export default function PorraView({
                 ) : !isDirty ? (
                   <>
                     <Check className="h-4 w-4" />
-                    Predicción guardada
+                    Sin cambios
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    Guardar predicción
+                    Enviar predicción
                   </>
                 )}
               </button>
-
-              {!isDirty && (
-                <p className="text-center text-xs text-muted">
-                  Puedes modificar tu predicción arrastrando los equipos y guardando de nuevo.
-                </p>
-              )}
             </>
           )}
 
@@ -530,6 +686,78 @@ export default function PorraView({
                   </tfoot>
                 </table>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Predicciones ────────────────────────────────────────────── */}
+      {activeTab === "predicciones" && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted">
+            Predicciones enviadas por los participantes.
+            {predictions.length < members.length && (
+              <span className="ml-1 text-yellow-400">
+                Aún faltan {members.length - predictions.length} por enviar.
+              </span>
+            )}
+          </p>
+          {predictions.length === 0 ? (
+            <div className="card p-8 text-center text-muted">
+              <p className="text-sm">Nadie ha enviado su predicción todavía.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {predictions.map((pred) => {
+                const sorted = [...pred.predictions].sort(
+                  (a, b) => a.predicted_position - b.predicted_position,
+                );
+                const predictorName = nameMap.get(pred.user_id) ?? pred.user_id.slice(0, 8);
+                const isOwn = pred.user_id === userId;
+                return (
+                  <div
+                    key={pred.user_id}
+                    className={`card p-4 ${isOwn ? "ring-1 ring-pitch-500/40" : ""}`}
+                  >
+                    {/* Card header */}
+                    <div className="mb-3 flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pitch-500/20 text-sm font-bold text-pitch-300">
+                        {predictorName.slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold leading-tight">{predictorName}</p>
+                        {isOwn && (
+                          <p className="text-xs text-pitch-300">Tu predicción</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Ordered list */}
+                    <ol className="space-y-1.5">
+                      {sorted.map((p, idx) => (
+                        <li key={p.member_user_id} className="flex items-center gap-2 text-sm">
+                          <span className="w-5 shrink-0 text-center font-display text-base leading-none text-gold-400">
+                            {idx + 1}
+                          </span>
+                          <span className="w-4 shrink-0">
+                            {idx === 0 && <Trophy className="h-3.5 w-3.5 text-gold-400" />}
+                            {idx === 1 && <Medal className="h-3.5 w-3.5 text-slate-400" />}
+                            {idx === 2 && <Medal className="h-3.5 w-3.5 text-amber-700" />}
+                          </span>
+                          <span
+                            className={
+                              p.member_user_id === userId
+                                ? "font-semibold text-pitch-300"
+                                : ""
+                            }
+                          >
+                            {nameMap.get(p.member_user_id) ?? "?"}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -608,9 +836,7 @@ export default function PorraView({
                         </td>
                         <td className="py-3 pr-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <span className="text-lg font-bold text-gold-300">
-                              {score.total}
-                            </span>
+                            <span className="text-lg font-bold text-gold-300">{score.total}</span>
                             {expandedUser === score.userId ? (
                               <ChevronUp className="h-3.5 w-3.5 text-muted" />
                             ) : (
@@ -700,9 +926,8 @@ export default function PorraView({
             de puntos se actualiza en tiempo real. Guarda cuando quieras publicar los resultados.
           </p>
 
-          {/* Two-column layout on sm+ */}
           <div className="grid gap-5 sm:grid-cols-2">
-            {/* Left: drag & drop input */}
+            {/* Left: drag & drop */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
                 Clasificación del fantasy
@@ -739,15 +964,9 @@ export default function PorraView({
               <div className="card overflow-hidden p-2">
                 <MiniLeaderboard rows={liveScores} userId={userId} />
               </div>
-              {allPredictions.length === 0 && (
-                <p className="text-xs text-muted">
-                  Aún no hay predicciones enviadas por los participantes.
-                </p>
-              )}
             </div>
           </div>
 
-          {/* Controls */}
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-line p-3">
             <input
               type="checkbox"
@@ -790,4 +1009,3 @@ export default function PorraView({
     </div>
   );
 }
-

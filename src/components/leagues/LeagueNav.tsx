@@ -27,6 +27,7 @@ export default function LeagueNav({
     { href: `${base}/jugadores`, label: "Selecciones" },
     { href: `${base}/equipos`, label: "Equipos" },
     { href: `${base}/historial`, label: "Historial" },
+    { href: `${base}/porra`, label: "La Porra" },
     ...(isAdmin ? [{ href: `${base}/admin`, label: "Admin" }] : []),
   ];
 

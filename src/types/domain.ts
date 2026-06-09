@@ -142,3 +142,33 @@ export const POSITION_COLORS: Record<Position, string> = {
   MID: "bg-pitch-500/15 text-pitch-300",
   FWD: "bg-rose-500/15 text-rose-300",
 };
+
+// --- La Porra ---
+
+export interface PorraPredictionEntry {
+  member_user_id: string;
+  predicted_position: number;
+}
+
+export interface PorraResultEntry {
+  member_user_id: string;
+  real_position: number;
+}
+
+export interface PorraPrediction {
+  id: string;
+  league_id: string;
+  user_id: string;
+  predictions: PorraPredictionEntry[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PorraResult {
+  id: string;
+  league_id: string;
+  results: PorraResultEntry[];
+  is_final: boolean;
+  created_at: string;
+  updated_at: string;
+}

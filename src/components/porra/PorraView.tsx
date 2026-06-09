@@ -511,6 +511,34 @@ export default function PorraView({
     }
   }
 
+  const [resetting, setResetting] = useState(false);
+
+  async function handleResetResults() {
+    if (
+      !window.confirm(
+        "¿Eliminar el resultado publicado?\n\nLa clasificación de la porra dejará de verse hasta que el admin vuelva a guardar una. El historial de snapshots se conserva.",
+      )
+    )
+      return;
+    setResetting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc("reset_porra_results", {
+        p_league_id: leagueId,
+      });
+      if (error) throw error;
+      setPorraResult(null);
+      setIsFinal(false);
+      setAdminDirty(true);
+      setActiveTab("admin");
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el resultado. Inténtalo de nuevo.");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   // ── Tabs ──────────────────────────────────────────────────────────────────
   const tabs: Array<{ id: TabId; label: string }> = [
     { id: "mi-porra", label: "Mi Porra" },
@@ -1113,6 +1141,25 @@ export default function PorraView({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Danger zone: delete published result */}
+          {hasResults && (
+            <div className="rounded-xl border border-red-500/30 p-4">
+              <p className="mb-1 text-sm font-semibold text-red-400">Zona de peligro</p>
+              <p className="mb-3 text-xs text-muted">
+                Elimina el resultado publicado actualmente. La porra dejará de mostrarse hasta
+                que vuelvas a guardar una clasificación. El historial de snapshots se conserva.
+              </p>
+              <button
+                onClick={handleResetResults}
+                disabled={resetting}
+                className="btn w-full border border-red-500/40 text-red-400 hover:bg-red-500/10 disabled:opacity-40"
+              >
+                <Trash2 className="h-4 w-4" />
+                {resetting ? "Eliminando…" : "Eliminar resultado publicado"}
+              </button>
             </div>
           )}
         </div>

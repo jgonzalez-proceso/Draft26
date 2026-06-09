@@ -449,7 +449,7 @@ export default function PorraView({
         member_user_id: uid,
         real_position: idx + 1,
       }));
-      const { error } = await supabase.rpc("set_porra_results", {
+      const { data: snapshotId, error } = await supabase.rpc("set_porra_results", {
         p_league_id: leagueId,
         p_results: results,
         p_is_final: isFinal,
@@ -470,8 +470,9 @@ export default function PorraView({
           day: "2-digit", month: "2-digit", year: "numeric",
           hour: "2-digit", minute: "2-digit",
         });
+      // Usar el UUID real devuelto por el RPC para poder borrar correctamente
       setLocalSnapshots((prev) => [
-        { id: crypto.randomUUID(), league_id: leagueId, results, label: autoLabel, created_at: now },
+        { id: snapshotId as string, league_id: leagueId, results, label: autoLabel, created_at: now },
         ...prev,
       ]);
       setSnapshotLabel("");

@@ -41,7 +41,7 @@ export default async function PorraPage({
       members={members}
       myPrediction={myPrediction as PorraPrediction | null}
       allPredictions={(predictions ?? []) as PorraPrediction[]}
-      porraResult={porraResult as PorraResult | null}
+      initialPorraResult={porraResult as PorraResult | null}
       isAdmin={ctx.isAdmin}
     />
   );

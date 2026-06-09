@@ -29,10 +29,11 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { PorraPrediction, PorraResult } from "@/types/domain";
-import { computePorraScores } from "@/lib/porra";
+import type { PorraPrediction, PorraResult, PorraResultEntry } from "@/types/domain";
+import { computePorraScores, type PorraScoreRow } from "@/lib/porra";
 
 // ---------------------------------------------------------------------------
 // SortableItem
@@ -50,14 +51,8 @@ function SortableItem({
   isMe: boolean;
   disabled?: boolean;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id, disabled });
 
   return (
     <div
@@ -94,6 +89,62 @@ function SortableItem({
 }
 
 // ---------------------------------------------------------------------------
+// Mini leaderboard (used in admin live preview)
+// ---------------------------------------------------------------------------
+function MiniLeaderboard({ rows, userId }: { rows: PorraScoreRow[]; userId: string }) {
+  if (rows.length === 0)
+    return (
+      <p className="py-4 text-center text-xs text-muted">
+        Añade predicciones para ver la previsión.
+      </p>
+    );
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-line text-xs text-muted">
+          <th className="pb-2 pl-2 text-left">#</th>
+          <th className="pb-2 text-left">Participante</th>
+          <th className="pb-2 text-center">Pos.</th>
+          <th className="pb-2 text-center">Bonus</th>
+          <th className="pb-2 pr-2 text-right font-semibold text-foreground">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, idx) => (
+          <tr key={row.userId} className="border-b border-line/40 last:border-0">
+            <td className="py-1.5 pl-2 w-6">
+              {idx === 0 ? (
+                <Trophy className="h-3.5 w-3.5 text-gold-400" />
+              ) : idx === 1 ? (
+                <Medal className="h-3.5 w-3.5 text-slate-400" />
+              ) : idx === 2 ? (
+                <Medal className="h-3.5 w-3.5 text-amber-700" />
+              ) : (
+                <span className="text-xs text-muted">{idx + 1}</span>
+              )}
+            </td>
+            <td className="py-1.5">
+              <span className={row.userId === userId ? "font-semibold text-pitch-300" : ""}>
+                {row.displayName}
+              </span>
+            </td>
+            <td className="py-1.5 text-center text-xs text-muted">{row.positionPoints}</td>
+            <td className="py-1.5 text-center text-xs">
+              {row.bonus > 0 ? (
+                <span className="text-gold-300">+{row.bonus}</span>
+              ) : (
+                <span className="text-muted">—</span>
+              )}
+            </td>
+            <td className="py-1.5 pr-2 text-right font-bold text-gold-300">{row.total}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 interface Member {
@@ -107,7 +158,7 @@ interface Props {
   members: Member[];
   myPrediction: PorraPrediction | null;
   allPredictions: PorraPrediction[];
-  porraResult: PorraResult | null;
+  initialPorraResult: PorraResult | null;
   isAdmin: boolean;
 }
 
@@ -122,7 +173,7 @@ export default function PorraView({
   members,
   myPrediction,
   allPredictions,
-  porraResult,
+  initialPorraResult,
   isAdmin,
 }: Props) {
   const nameMap = useMemo(
@@ -145,40 +196,63 @@ export default function PorraView({
   const [saving, setSaving] = useState(false);
 
   // ── Admin results state ───────────────────────────────────────────────────
+  // porraResult lives in state so we can update it after save without reload
+  const [porraResult, setPorraResult] = useState<PorraResult | null>(initialPorraResult);
+
   const initialAdminItems = useMemo<string[]>(() => {
-    if (porraResult?.results?.length) {
-      return [...porraResult.results]
+    if (initialPorraResult?.results?.length) {
+      return [...initialPorraResult.results]
         .sort((a, b) => a.real_position - b.real_position)
         .map((r) => r.member_user_id);
     }
     return members.map((m) => m.user_id);
-  }, [porraResult, members]);
+  }, [initialPorraResult, members]);
 
   const [adminItems, setAdminItems] = useState<string[]>(initialAdminItems);
-  const [isFinal, setIsFinal] = useState(porraResult?.is_final ?? false);
-  const [adminDirty, setAdminDirty] = useState(false);
+  const [isFinal, setIsFinal] = useState(initialPorraResult?.is_final ?? false);
+  // Enable save button immediately when no results exist yet
+  const [adminDirty, setAdminDirty] = useState(!initialPorraResult?.results?.length);
   const [savingAdmin, setSavingAdmin] = useState(false);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+
+  // ── Derived ───────────────────────────────────────────────────────────────
   const hasResults = !!porraResult?.results?.length;
   const isFinalResults = porraResult?.is_final ?? false;
 
-  const defaultTab: TabId = hasResults ? "clasificacion" : "mi-porra";
+  // Default tab: admin if no results yet (so they land on the input form),
+  // clasificacion once results are published, mi-porra for non-admins.
+  const defaultTab: TabId = hasResults
+    ? "clasificacion"
+    : isAdmin
+      ? "admin"
+      : "mi-porra";
   const [activeTab, setActiveTab] = useState<TabId>(defaultTab);
 
-  // ── Scores ────────────────────────────────────────────────────────────────
+  // ── Scores from saved porraResult ─────────────────────────────────────────
   const scores = useMemo(() => {
     if (!hasResults) return [];
     return computePorraScores(
       members.map((m) => ({ user_id: m.user_id, display_name: m.display_name })),
-      allPredictions.map((p) => ({
-        user_id: p.user_id,
-        predictions: p.predictions,
-      })),
+      allPredictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
       porraResult!.results,
     );
   }, [members, allPredictions, porraResult, hasResults]);
+
+  // ── Live preview scores (from current adminItems, updates on every drag) ──
+  const liveScores = useMemo<PorraScoreRow[]>(() => {
+    if (!allPredictions.length) return [];
+    const liveResults: PorraResultEntry[] = adminItems.map((uid, idx) => ({
+      member_user_id: uid,
+      real_position: idx + 1,
+    }));
+    return computePorraScores(
+      members.map((m) => ({ user_id: m.user_id, display_name: m.display_name })),
+      allPredictions.map((p) => ({ user_id: p.user_id, predictions: p.predictions })),
+      liveResults,
+    );
+  }, [adminItems, allPredictions, members]);
 
   const myScore = scores.find((s) => s.userId === userId);
 
@@ -234,7 +308,7 @@ export default function PorraView({
     setSavingAdmin(true);
     try {
       const supabase = createClient();
-      const results = adminItems.map((uid, idx) => ({
+      const results: PorraResultEntry[] = adminItems.map((uid, idx) => ({
         member_user_id: uid,
         real_position: idx + 1,
       }));
@@ -244,8 +318,18 @@ export default function PorraView({
         p_is_final: isFinal,
       });
       if (error) throw error;
+      // Update local state — no page reload needed
+      setPorraResult((prev) => ({
+        id: prev?.id ?? crypto.randomUUID(),
+        league_id: leagueId,
+        results,
+        is_final: isFinal,
+        created_at: prev?.created_at ?? new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
       setAdminDirty(false);
-      window.location.reload();
+      // Jump straight to the leaderboard
+      setActiveTab("clasificacion");
     } catch (err) {
       console.error(err);
       alert("Error al guardar los resultados. Inténtalo de nuevo.");
@@ -255,9 +339,11 @@ export default function PorraView({
   }
 
   // ── Tabs ──────────────────────────────────────────────────────────────────
+  // "Clasificación" is visible to admins always (even before first save),
+  // and to regular members once results exist.
   const tabs: Array<{ id: TabId; label: string }> = [
     { id: "mi-porra", label: "Mi Porra" },
-    ...(hasResults ? [{ id: "clasificacion" as TabId, label: "Clasificación" }] : []),
+    ...(hasResults || isAdmin ? [{ id: "clasificacion" as TabId, label: "Clasificación" }] : []),
     ...(isAdmin ? [{ id: "admin" as TabId, label: "Resultados (admin)" }] : []),
   ];
 
@@ -272,7 +358,7 @@ export default function PorraView({
         </p>
       </div>
 
-      {/* Participation counter */}
+      {/* Participation + status banner */}
       <div className="card flex flex-wrap items-center gap-3 p-3">
         <Users className="h-4 w-4 shrink-0 text-muted" />
         <span className="text-sm text-muted">
@@ -286,7 +372,7 @@ export default function PorraView({
           </span>
         )}
         {hasResults && !isFinalResults && (
-          <span className="ml-auto rounded-full bg-state-paused/20 px-2.5 py-0.5 text-xs font-semibold text-yellow-400">
+          <span className="ml-auto rounded-full bg-yellow-500/20 px-2.5 py-0.5 text-xs font-semibold text-yellow-400">
             Resultados provisionales
           </span>
         )}
@@ -306,6 +392,9 @@ export default function PorraView({
               }`}
             >
               {tab.label}
+              {tab.id === "admin" && adminDirty && (
+                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-gold-400 align-middle" />
+              )}
             </button>
           ))}
         </div>
@@ -374,7 +463,7 @@ export default function PorraView({
             </>
           )}
 
-          {/* My prediction breakdown (only shown when results exist) */}
+          {/* My breakdown vs official results */}
           {hasResults && myScore && (
             <div className="space-y-2 pt-2">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
@@ -393,10 +482,7 @@ export default function PorraView({
                   </thead>
                   <tbody>
                     {myScore.details.map((d) => (
-                      <tr
-                        key={d.memberUserId}
-                        className="border-b border-line/50 last:border-0"
-                      >
+                      <tr key={d.memberUserId} className="border-b border-line/50 last:border-0">
                         <td className="py-2 pl-4 font-medium">{d.memberName}</td>
                         <td className="py-2 text-center text-muted">{d.predictedPosition}º</td>
                         <td className="py-2 text-center text-muted">{d.realPosition}º</td>
@@ -420,9 +506,7 @@ export default function PorraView({
                       <td colSpan={4} className="py-2 pl-4 text-xs text-muted">
                         Posiciones
                       </td>
-                      <td className="py-2 pr-4 text-right font-bold text-foreground">
-                        {myScore.positionPoints}
-                      </td>
+                      <td className="py-2 pr-4 text-right font-bold">{myScore.positionPoints}</td>
                     </tr>
                     {myScore.bonusBreakdown.map((b) => (
                       <tr key={b.label}>
@@ -455,11 +539,22 @@ export default function PorraView({
       {activeTab === "clasificacion" && (
         <div className="space-y-3">
           {scores.length === 0 ? (
-            <div className="card p-8 text-center text-muted">
-              <p className="text-sm">
-                Los resultados aún no están disponibles. El admin los publicará cuando
-                finalice el fantasy.
+            <div className="card p-8 text-center">
+              <Eye className="mx-auto mb-3 h-8 w-8 text-muted" />
+              <p className="font-medium">Sin resultados publicados todavía</p>
+              <p className="mt-1 text-sm text-muted">
+                {isAdmin
+                  ? "Ve al tab «Resultados (admin)», introduce la clasificación actual y guarda."
+                  : "El admin publicará la clasificación cuando haya resultados."}
               </p>
+              {isAdmin && (
+                <button
+                  onClick={() => setActiveTab("admin")}
+                  className="btn btn-gold mx-auto mt-4"
+                >
+                  Introducir clasificación
+                </button>
+              )}
             </div>
           ) : (
             <div className="card overflow-hidden">
@@ -482,7 +577,7 @@ export default function PorraView({
                           setExpandedUser(expandedUser === score.userId ? null : score.userId)
                         }
                       >
-                        <td className="py-3 pl-4 w-8">
+                        <td className="w-8 py-3 pl-4">
                           {idx === 0 ? (
                             <Trophy className="h-4 w-4 text-gold-400" />
                           ) : idx === 1 ? (
@@ -543,10 +638,7 @@ export default function PorraView({
                               </thead>
                               <tbody>
                                 {score.details.map((d) => (
-                                  <tr
-                                    key={d.memberUserId}
-                                    className="border-t border-line/30"
-                                  >
+                                  <tr key={d.memberUserId} className="border-t border-line/30">
                                     <td className="py-1 font-medium">{d.memberName}</td>
                                     <td className="py-1 text-center text-muted">
                                       {d.predictedPosition}º
@@ -600,34 +692,62 @@ export default function PorraView({
         </div>
       )}
 
-      {/* ── Tab: Admin resultados ────────────────────────────────────────── */}
+      {/* ── Tab: Resultados (admin) ──────────────────────────────────────── */}
       {activeTab === "admin" && isAdmin && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <p className="text-sm text-muted">
-            Establece la clasificación real del fantasy para calcular los puntos de La Porra.
-            Puedes actualizarla las veces que necesites hasta marcarla como definitiva.
+            Introduce la clasificación actual del fantasy arrastrando los equipos. La previsión
+            de puntos se actualiza en tiempo real. Guarda cuando quieras publicar los resultados.
           </p>
 
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleAdminDragEnd}
-          >
-            <SortableContext items={adminItems} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
-                {adminItems.map((uid, idx) => (
-                  <SortableItem
-                    key={uid}
-                    id={uid}
-                    position={idx + 1}
-                    name={nameMap.get(uid) ?? uid.slice(0, 8)}
-                    isMe={uid === userId}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+          {/* Two-column layout on sm+ */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Left: drag & drop input */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                Clasificación del fantasy
+              </h3>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleAdminDragEnd}
+              >
+                <SortableContext items={adminItems} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {adminItems.map((uid, idx) => (
+                      <SortableItem
+                        key={uid}
+                        id={uid}
+                        position={idx + 1}
+                        name={nameMap.get(uid) ?? uid.slice(0, 8)}
+                        isMe={uid === userId}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
 
+            {/* Right: live porra preview */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted">
+                Previsión de la porra
+                <span className="ml-2 rounded bg-pitch-500/20 px-1.5 py-0.5 text-xs font-normal normal-case text-pitch-300">
+                  en tiempo real
+                </span>
+              </h3>
+              <div className="card overflow-hidden p-2">
+                <MiniLeaderboard rows={liveScores} userId={userId} />
+              </div>
+              {allPredictions.length === 0 && (
+                <p className="text-xs text-muted">
+                  Aún no hay predicciones enviadas por los participantes.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Controls */}
           <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-line p-3">
             <input
               type="checkbox"
@@ -639,7 +759,7 @@ export default function PorraView({
               className="h-4 w-4 rounded border-line accent-gold-500"
             />
             <div>
-              <p className="text-sm font-medium">Marcar como definitivos</p>
+              <p className="text-sm font-medium">Marcar como resultados definitivos</p>
               <p className="text-xs text-muted">
                 Bloqueará las predicciones de todos los participantes.
               </p>
@@ -656,12 +776,12 @@ export default function PorraView({
             ) : !adminDirty ? (
               <>
                 <Check className="h-4 w-4" />
-                Resultados guardados
+                Clasificación guardada
               </>
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Guardar resultados
+                Guardar clasificación y ver porra
               </>
             )}
           </button>
@@ -670,3 +790,4 @@ export default function PorraView({
     </div>
   );
 }
+

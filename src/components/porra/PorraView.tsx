@@ -528,14 +528,11 @@ export default function PorraView({
         p_league_id: leagueId,
       });
       if (error) throw error;
-      setPorraResult(null);
-      setIsFinal(false);
-      setAdminDirty(true);
-      setActiveTab("admin");
+      // Reload para que el servidor devuelva datos frescos (sin resultado publicado)
+      window.location.reload();
     } catch (err) {
       console.error(err);
       alert("Error al eliminar el resultado. Inténtalo de nuevo.");
-    } finally {
       setResetting(false);
     }
   }
